@@ -8,13 +8,17 @@ const themes = {
   sunny: { icon: 'bg-sunny-100 text-tangerine-600', header: 'bg-sunny-50/60 hover:bg-sunny-50', border: 'border-sunny-200' },
 }
 
-export default function Accordion({ title, subtitle, icon: Icon, badge, defaultOpen = false, color = 'sky', children }) {
-  const [open, setOpen] = useState(defaultOpen)
+export default function Accordion({ title, subtitle, icon: Icon, badge, color = 'sky', children }) {
+  // Always start collapsed — teacher expands classes manually
+  const [open, setOpen] = useState(false)
   const theme = themes[color] || themes.sky
+
   return (
     <div className={`bg-white rounded-xl3 shadow-card border-2 overflow-hidden ${theme.border}`}>
       <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
         className={`w-full flex items-center justify-between gap-4 px-5 py-4 transition-colors ${theme.header}`}
       >
         <div className="flex items-center gap-3 text-left">
@@ -36,8 +40,9 @@ export default function Accordion({ title, subtitle, icon: Icon, badge, defaultO
         </div>
       </button>
       <AnimatePresence initial={false}>
-        {open && (
+        {open ? (
           <motion.div
+            key="content"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -46,7 +51,7 @@ export default function Accordion({ title, subtitle, icon: Icon, badge, defaultO
           >
             <div className="px-5 pb-5 pt-1">{children}</div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   )
