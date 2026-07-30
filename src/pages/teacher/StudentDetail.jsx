@@ -58,7 +58,7 @@ export default function StudentDetail() {
   }
 
   async function handleSubmit() {
-    if (!selected || saving) return
+    if (!selected || saving || submitted) return
     setSaving(true)
     setSaveError('')
     try {
@@ -71,12 +71,11 @@ export default function StudentDetail() {
         origin: { y: 0.6 },
         colors: ['#22A3F5', '#22B566', '#FFBE22', '#FA5411'],
       })
-      setTimeout(() => confetti({ particleCount: 60, spread: 100, origin: { y: 0.5, x: 0.2 } }), 200)
-      setTimeout(() => confetti({ particleCount: 60, spread: 100, origin: { y: 0.5, x: 0.8 } }), 400)
-      setTimeout(() => setCelebrate(false), 2600)
+      setTimeout(() => confetti({ particleCount: 60, angle: 100, origin: { y: 0.5, x: 0.2 } }), 200)
+      setTimeout(() => confetti({ particleCount: 60, angle: 120, origin: { y: 0.5, x: 0.8 } }), 400)
+      setTimeout(() => navigate('/teacher/students', { replace: true }), 1200)
     } catch (err) {
       setSaveError(err.message || 'Failed to save review')
-    } finally {
       setSaving(false)
     }
   }
@@ -165,20 +164,26 @@ export default function StudentDetail() {
         <div className="grid grid-cols-3 gap-2 sm:gap-5">
           {moods.map((m) => {
             const isActive = selected === m.key
+            const locked = submitted || saving
             return (
               <motion.button
                 key={m.key}
-                disabled={submitted}
-                onClick={() => setSelected(m.key)}
-                whileHover={!submitted ? { scale: 1.05, y: -4 } : {}}
-                whileTap={!submitted ? { scale: 0.96 } : {}}
+                type="button"
+                disabled={locked}
+                onClick={() => {
+                  if (locked) return
+                  setSelected(m.key)
+                }}
+                whileHover={!locked ? { scale: 1.05, y: -4 } : {}}
+                whileTap={!locked ? { scale: 0.96 } : {}}
                 animate={isActive ? { scale: [1, 1.08, 1] } : {}}
                 transition={{ duration: 0.4 }}
                 className={`relative rounded-2xl sm:rounded-xl3 p-3 sm:p-7 flex flex-col items-center gap-1 sm:gap-2 border-2 transition-all ${
                   isActive
                     ? `border-transparent bg-gradient-to-br ${m.color} shadow-glow text-white`
                     : 'border-sky-100 bg-sky-50/40 text-sky-900 hover:border-sky-200'
-                } ${submitted && !isActive ? 'opacity-40' : ''} disabled:cursor-not-allowed`}
+                } ${locked && !isActive ? 'opacity-40' : ''} ${locked ? 'pointer-events-none cursor-not-allowed' : ''}`}
+                aria-disabled={locked}
               >
                 <span className="text-3xl sm:text-5xl">{m.emoji}</span>
                 <span className="font-heading font-bold text-xs sm:text-base">{m.label}</span>
@@ -199,12 +204,12 @@ export default function StudentDetail() {
         <div className="mt-5 sm:mt-6">
           <label className="text-sm font-semibold text-sky-800/80 mb-2 block">Optional Remarks</label>
           <textarea
-            disabled={submitted}
+            disabled={submitted || saving}
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
             rows={4}
             placeholder="Add any additional observation about this student..."
-            className="w-full rounded-2xl border border-sky-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-sky-50/60"
+            className="w-full rounded-2xl border border-sky-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-sky-50/60 disabled:cursor-not-allowed"
           />
         </div>
 
@@ -215,10 +220,10 @@ export default function StudentDetail() {
             </Button>
           ) : (
             <div className="flex items-center gap-2 text-good font-heading font-bold">
-              <CheckCircle2 className="w-6 h-6 shrink-0" /> Review submitted &mdash; great job! 🎉
+              <CheckCircle2 className="w-6 h-6 shrink-0" /> Review submitted — returning to list…
             </div>
           )}
-          {!submitted && <p className="text-xs text-sky-700/50">Only one option can be selected.</p>}
+          {!submitted && !saving && <p className="text-xs text-sky-700/50">Only one option can be selected.</p>}
         </div>
         {saveError ? <p className="mt-3 text-sm text-red-600">{saveError}</p> : null}
 

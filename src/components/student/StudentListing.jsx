@@ -98,6 +98,14 @@ export default function StudentListing({ students, basePath = '/teacher/students
       )}
       {grouped.map(({ cls, list }, i) => {
         const completed = list.filter((s) => s.status === 'Completed').length
+        const pending = list.filter((s) => s.status === 'Pending').length
+        const badgeLabel =
+          statusFilter === 'Pending'
+            ? `${pending}/${list.length} pending`
+            : statusFilter === 'Completed'
+              ? `${list.length} completed`
+              : `${completed}/${list.length} completed`
+
         return (
           <Accordion
             key={cls}
@@ -108,7 +116,7 @@ export default function StudentListing({ students, basePath = '/teacher/students
             defaultOpen={i === 0}
             badge={
               <span className="text-xs font-semibold text-sky-700/60 hidden sm:inline">
-                {completed}/{list.length} completed
+                {badgeLabel}
               </span>
             }
           >
