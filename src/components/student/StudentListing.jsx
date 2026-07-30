@@ -113,7 +113,7 @@ export default function StudentListing({ students, basePath = '/teacher/students
             subtitle={`${list.length} students`}
             icon={BookOpen}
             color={groupColors[i % groupColors.length]}
-            defaultOpen={i === 0}
+            defaultOpen={false}
             badge={
               <span className="text-xs font-semibold text-sky-700/60 hidden sm:inline">
                 {badgeLabel}
