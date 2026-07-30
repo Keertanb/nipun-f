@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Poppins', 'Inter', sans-serif;
+  background: #f5fbff;
+  color: #144d74;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: 'Baloo 2', 'Poppins', sans-serif;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #b8e6ff;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: #86d6ff; }
+
+.bg-grid-dots {
+  background-image: radial-gradient(circle, rgba(34,163,245,0.12) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+
+.glass {
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
