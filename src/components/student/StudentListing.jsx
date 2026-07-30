@@ -40,7 +40,15 @@ export default function StudentListing({ students, basePath = '/teacher/students
     const knownSet = new Set(known.map((g) => g.cls))
     const extra = [...new Set(filtered.map((s) => s.class).filter((c) => c && !knownSet.has(c)))]
       .map((cls) => ({ cls, list: filtered.filter((s) => s.class === cls) }))
-    return [...known, ...extra]
+    // Always keep Balvatika at the top of the accordion list
+    return [...known, ...extra].sort((a, b) => {
+      const order = CLASS_LIST
+      const ai = /bal\s*vatika/i.test(a.cls) ? 0 : order.indexOf(a.cls)
+      const bi = /bal\s*vatika/i.test(b.cls) ? 0 : order.indexOf(b.cls)
+      const aIdx = ai === -1 ? order.length + 1 : ai
+      const bIdx = bi === -1 ? order.length + 1 : bi
+      return aIdx - bIdx || a.cls.localeCompare(b.cls)
+    })
   }, [filtered, filterClasses])
 
   return (
