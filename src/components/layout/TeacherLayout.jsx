@@ -1,15 +1,15 @@
-import { Outlet, useNavigate, NavLink, Link } from 'react-router-dom'
-import { useEffect, useRef, useState } from 'react'
-import { CheckCircle2, LogOut, GraduationCap } from 'lucide-react'
-import Avatar from '../ui/Avatar'
+import { Outlet, useNavigate, Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { LogOut, GraduationCap } from 'lucide-react'
+import LanguageToggle from '../ui/LanguageToggle'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 import { Star as StarDoodle, Balloon, ABCBlock } from '../illustrations/Doodles'
 
 export default function TeacherLayout() {
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef(null)
 
   useEffect(() => {
     function onUnauthorized() {
@@ -19,14 +19,6 @@ export default function TeacherLayout() {
     return () => window.removeEventListener('ng:unauthorized', onUnauthorized)
   }, [navigate])
 
-  useEffect(() => {
-    function onClickOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [])
-
   async function handleLogout() {
     await logout()
     navigate('/login')
@@ -34,7 +26,6 @@ export default function TeacherLayout() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-sky-50 via-white to-leaf-50">
-      {/* Ambient background — dots, colour blobs and doodles for the whole page */}
       <div className="absolute inset-0 bg-grid-dots -z-20" />
       <div className="absolute top-52 -left-24 w-72 h-72 bg-sky-200/30 rounded-full blur-3xl -z-20" />
       <div className="absolute top-[36rem] -right-24 w-80 h-80 bg-leaf-200/30 rounded-full blur-3xl -z-20" />
@@ -54,43 +45,19 @@ export default function TeacherLayout() {
         <StarDoodle className="w-5 h-5 top-3 right-1/3 hidden xl:block" color="#FFBE22" delay={0.4} />
         <ABCBlock className="w-7 h-7 bottom-2 right-1/4 hidden xl:block" letter="T" color="#FA5411" delay={0.9} />
 
-        <header className="relative px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link to="/teacher" className="flex items-center gap-3">
+        <header className="relative px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+          <Link to="/teacher" className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center shadow-soft shrink-0">
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
-            <p className="font-heading font-extrabold text-sky-900 leading-tight">Welcome back</p>
+            <p className="font-heading font-extrabold text-sky-900 leading-tight truncate">{t('welcomeBack')}</p>
           </Link>
-          <div className="relative flex items-center gap-3">
-            <Balloon className="w-6 h-11 top-1 right-24 hidden md:block" color="#22B566" delay={0.7} />
-
-            <div className="relative" ref={menuRef}>
-              <button onClick={() => setMenuOpen((o) => !o)} className="relative block">
-                <Avatar seed={user?.teacher?.avatarSeed} name={user?.teacher?.name || 'T'} size={40} className="ring-2 ring-white shadow-soft" />
-                <span className="absolute -bottom-0.5 right-2.5 w-2.5 h-2.5 rounded-full bg-leaf-500 border-2 border-white" />
-              </button>
-              {menuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-soft border border-sky-100 py-2 z-20">
-                  <p className="px-4 py-1.5 text-xs font-semibold text-sky-700/60 truncate">{user?.teacher?.name || 'Teacher'}</p>
-                  <NavLink
-                    to="/teacher/completed"
-                    onClick={() => setMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center gap-2.5 px-4 py-2 text-sm font-semibold transition-colors ${
-                        isActive ? 'text-sky-600 bg-sky-50' : 'text-sky-800/80 hover:bg-sky-50'
-                      }`
-                    }
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    Completed Reviews
-                  </NavLink>
-                </div>
-              )}
-            </div>
-
+          <div className="relative flex items-center gap-2 sm:gap-3">
+            <LanguageToggle />
             <button
+              type="button"
               onClick={handleLogout}
-              title="Logout"
+              title={t('logout')}
               className="w-10 h-10 rounded-full bg-tangerine-50 text-tangerine-600 hover:bg-tangerine-100 flex items-center justify-center shadow-soft transition-colors shrink-0"
             >
               <LogOut className="w-4 h-4" />

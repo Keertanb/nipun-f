@@ -2,7 +2,9 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { GraduationCap, ArrowRight, Star } from "lucide-react";
 import Button from "../components/ui/Button";
+import LanguageToggle from "../components/ui/LanguageToggle";
 import SkyDecor from "../components/illustrations/SkyDecor";
+import { useLanguage } from "../context/LanguageContext";
 import {
   Star as StarDoodle,
   Balloon,
@@ -33,27 +35,31 @@ function WaveDivider({ color = "#ffffff", flip = false }) {
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-leaf-50 to-sunny-50 overflow-x-hidden">
       {/* HERO */}
       <section className="relative overflow-hidden min-h-screen flex flex-col">
         <div className="absolute inset-0 bg-grid-dots -z-20" />
         <SkyDecor />
-        <div className="relative max-w-7xl mx-auto w-full px-6 pt-10 pb-6 flex items-center justify-between">
+        <div className="relative max-w-7xl mx-auto w-full px-6 pt-10 pb-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center shadow-soft">
               <GraduationCap className="w-6 h-6 text-white" />
             </div>
             <div>
               <p className="font-heading font-extrabold text-sky-900 leading-none">
-                Nipun Gujarat
+                {t("brand")}
               </p>
               {/* <p className="text-[11px] text-sky-700/60">Govt. of Gujarat</p> */}
             </div>
           </div>
-          <Button size="sm" onClick={() => navigate("/login")}>
-            Login
-          </Button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageToggle />
+            <Button size="sm" onClick={() => navigate("/login")}>
+              {t("login")}
+            </Button>
+          </div>
         </div>
 
         <div className="relative max-w-7xl mx-auto w-full px-6 pt-6 pb-14 grid lg:grid-cols-[0.95fr_1.15fr] gap-10 items-center flex-1">
@@ -89,16 +95,14 @@ export default function Landing() {
               Government of Gujarat &middot; Balvatika to Standard 5
             </span> */}
             <h1 className="font-heading font-extrabold text-4xl sm:text-5xl xl:text-6xl leading-tight text-sky-900">
-              Government of Gujarat
-              <span className="block bg-gradient-to-r from-sky-500 via-leaf-500 to-tangerine-500 bg-clip-text text-transparent">
-                Student Observation &amp; Review Portal
+              {t("landingHeadline")}
+              <span className="mt-3 sm:mt-4 pt-1 block leading-snug bg-gradient-to-r from-sky-500 via-leaf-500 to-tangerine-500 bg-clip-text text-transparent">
+                {t("landingSubheadline")}
               </span>
             </h1>
             <SquiggleUnderline className="w-48 h-4 mt-1" color="#43CD82" />
             <p className="mt-4 text-lg text-sky-800/70 max-w-xl">
-              A teacher-friendly digital platform for reviewing student
-              development from Balvatika to Standard 5 &mdash; simple, joyful
-              and built for every classroom in Gujarat.
+              {t("landingBlurb")}
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Button
@@ -107,14 +111,14 @@ export default function Landing() {
                 icon={ArrowRight}
                 onClick={() => navigate("/login")}
               >
-                Get Started
+                {t("getStarted")}
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 onClick={() => navigate("/login")}
               >
-                I&apos;m an Admin
+                {t("imAnAdmin")}
               </Button>
             </div>
           </motion.div>
@@ -163,7 +167,7 @@ export default function Landing() {
             >
               <img
                 src="/images/classroom-hero.jpg"
-                alt="A full classroom of Indian students learning together with their teacher"
+                alt={t("classroomAlt")}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-sky-900/15 via-transparent to-transparent" />

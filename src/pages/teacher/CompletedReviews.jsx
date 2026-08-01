@@ -1,29 +1,31 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Sprout, TrendingUp, Award } from 'lucide-react'
 import Avatar from '../../components/ui/Avatar'
 import Badge from '../../components/ui/Badge'
 import { useAuth } from '../../context/AuthContext'
 import { useReviews } from '../../context/ReviewContext'
+import { useLanguage } from '../../context/LanguageContext'
 import { classesFromStudents, CLASS_LIST } from '../../constants/classes'
+import { REVIEW_LEVELS } from '../../i18n/translations'
 
 const PAGE_SIZE = 6
+
+const levelIcons = { sprout: Sprout, trending: TrendingUp, award: Award }
 
 export default function CompletedReviews() {
   const { user } = useAuth()
   const { students, loading, error, reloadStudents } = useReviews()
+  const { t } = useLanguage()
   const teacher = user?.teacher
   const [search, setSearch] = useState('')
   const [classFilter, setClassFilter] = useState('All')
   const [page, setPage] = useState(1)
 
-  const classOptions = useMemo(
-    () => {
-      const list = classesFromStudents(students, teacher?.classesAssigned || [])
-      return list.length ? list : CLASS_LIST
-    },
-    [students, teacher?.classesAssigned],
-  )
+  const classOptions = useMemo(() => {
+    const list = classesFromStudents(students, teacher?.classesAssigned || [])
+    return list.length ? list : CLASS_LIST
+  }, [students, teacher?.classesAssigned])
 
   const completed = useMemo(() => {
     return students
@@ -38,11 +40,21 @@ export default function CompletedReviews() {
 
   const reviewColor = { Good: 'text-good', Average: 'text-avg', Bad: 'text-bad' }
 
+  function reviewLabel(key) {
+    const level = REVIEW_LEVELS.find((l) => l.key === key)
+    return level ? t(level.shortKey) : key
+  }
+
+  function ReviewIcon({ reviewKey }) {
+    const level = REVIEW_LEVELS.find((l) => l.key === reviewKey)
+    const Icon = levelIcons[level?.icon] || Award
+    return <Icon className={`w-4 h-4 ${reviewColor[reviewKey] || 'text-sky-600'}`} />
+  }
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading font-extrabold text-2xl text-sky-900">Completed Reviews</h1>
-        <p className="text-sky-800/60 text-sm mt-1">All students you have reviewed so far.</p>
+        <h1 className="font-heading font-extrabold text-2xl text-sky-900">{t('completedReviews')}</h1>
       </div>
 
       <div className="bg-white rounded-xl3 shadow-card border border-sky-100 p-4 flex flex-col sm:flex-row gap-3">
@@ -51,7 +63,7 @@ export default function CompletedReviews() {
           <input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-            placeholder="Search student..."
+            placeholder={t('searchStudent')}
             className="w-full pl-10 pr-4 py-2.5 rounded-full border border-sky-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
           />
         </div>
@@ -60,24 +72,23 @@ export default function CompletedReviews() {
           onChange={(e) => { setClassFilter(e.target.value); setPage(1) }}
           className="rounded-full border border-sky-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
         >
-          <option value="All">All Classes</option>
+          <option value="All">{t('allClasses')}</option>
           {classOptions.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
 
       {loading ? (
-        <p className="text-sky-800/60 text-sm py-16 text-center">Loading reviews…</p>
+        <p className="text-sky-800/60 text-sm py-16 text-center">{t('loadingStudents')}</p>
       ) : error ? (
         <div className="text-center py-16">
           <p className="text-red-600 text-sm mb-3">{error}</p>
           <button type="button" onClick={reloadStudents} className="text-sm font-semibold text-sky-600 hover:underline">
-            Retry
+            {t('retry')}
           </button>
         </div>
       ) : pageItems.length === 0 ? (
         <div className="text-center py-20 text-sky-700/50">
-          <p className="text-5xl mb-3">🗂️</p>
-          <p className="font-heading font-bold">No completed reviews yet</p>
+          <p className="font-heading font-bold">{t('noStudentsMatch')}</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
@@ -94,12 +105,13 @@ export default function CompletedReviews() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-heading font-bold text-sky-900 truncate">{s.name}</p>
-                    <Badge type="Completed">Completed</Badge>
+                    <Badge type="Completed">{t('completed')}</Badge>
                   </div>
-                  <p className="text-xs text-sky-700/60">{s.class} &middot; Roll #{s.rollNo}</p>
-                  <div className="flex items-center gap-3 mt-2 text-sm">
-                    <span className={`font-heading font-bold ${reviewColor[s.review]}`}>
-                      {s.review === 'Good' ? '😁' : s.review === 'Average' ? '🙂' : '😞'} {s.review}
+                  <p className="text-xs text-sky-700/60">{s.class} &middot; {t('rollNo')} {s.rollNo}</p>
+                  <div className="flex items-center gap-2 mt-2 text-sm">
+                    <ReviewIcon reviewKey={s.review} />
+                    <span className={`font-heading font-bold ${reviewColor[s.review] || 'text-sky-800'}`}>
+                      {reviewLabel(s.review)}
                     </span>
                     <span className="text-sky-700/50 text-xs">{s.reviewDate}</span>
                   </div>
@@ -120,7 +132,9 @@ export default function CompletedReviews() {
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm font-semibold text-sky-800/70">Page {page} of {totalPages}</span>
+          <span className="text-sm font-semibold text-sky-800/70">
+            {page} / {totalPages}
+          </span>
           <button
             disabled={page === totalPages}
             onClick={() => setPage((p) => p + 1)}

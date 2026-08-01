@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, ArrowRight, Star, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Star, ArrowLeft, GraduationCap, Shield } from "lucide-react";
 import Button from "../components/ui/Button";
+import LanguageToggle from "../components/ui/LanguageToggle";
 import SkyDecor from "../components/illustrations/SkyDecor";
 import {
   Star as StarDoodle,
@@ -13,6 +14,7 @@ import {
   ConfettiDots,
 } from "../components/illustrations/Doodles";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 // A little smiling graduate face that peeks over the top edge of the
 // login card — the "buddy" greeting whoever's signing in.
@@ -60,6 +62,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { loginAsTeacher, loginAsAdmin } = useAuth();
+  const { t } = useLanguage();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -67,8 +70,8 @@ export default function Login() {
 
     if (role === "teacher") {
       const code = teacherId.trim();
-      if (!/^\d{8}$/.test(code)) {
-        setFormError("Enter a valid 8-digit Teacher ID");
+      if (!code) {
+        setFormError(t("teacherIdPlaceholder"));
         return;
       }
       setSubmitting(true);
@@ -153,8 +156,11 @@ export default function Login() {
         to="/"
         className="absolute top-6 left-6 inline-flex items-center gap-1.5 text-sm font-heading font-bold text-sky-700/70 hover:text-sky-900 transition-colors z-10"
       >
-        <ArrowLeft className="w-4 h-4" /> Home
+        <ArrowLeft className="w-4 h-4" /> {t("home")}
       </Link>
+      <div className="absolute top-6 right-6 z-10">
+        <LanguageToggle />
+      </div>
 
       {/* Polaroid snapshot of a real classroom, pinned beside the card */}
       <motion.div
@@ -214,10 +220,10 @@ export default function Login() {
             Government of Gujarat
           </span> */}
           <h1 className="font-heading font-extrabold text-3xl sm:text-4xl text-sky-900 leading-tight drop-shadow-sm">
-            Nipun Gujarat
+            {t("brand")}
           </h1>
           <p className="font-heading font-extrabold text-base sm:text-lg bg-gradient-to-r from-sky-500 via-leaf-500 to-tangerine-500 bg-clip-text text-transparent mt-0.5">
-            Student Observation &amp; Review Portal
+            {t("brandSub")}
           </p>
         </div>
 
@@ -229,22 +235,22 @@ export default function Login() {
 
           <div className="text-center mb-6">
             <h1 className="font-heading font-extrabold text-2xl text-sky-900">
-              Welcome back!
+              {t("welcomeBackExclaim")}
             </h1>
             <SquiggleUnderline
               className="w-32 h-3.5 mx-auto mt-0.5"
               color="#43CD82"
             />
             <p className="text-sm text-sky-800/60 mt-2">
-              Pick your role and let's get reviewing
+              {t("pickRole")}
             </p>
           </div>
 
           {/* Sliding pill role switcher */}
           <div className="relative flex bg-sky-50 rounded-full p-1.5 mb-6">
             {[
-              { key: "teacher", label: "Teacher", emoji: "👩‍🏫" },
-              { key: "admin", label: "Admin", emoji: "🛡️" },
+              { key: "teacher", label: t("teacher"), Icon: GraduationCap },
+              { key: "admin", label: t("admin"), Icon: Shield },
             ].map((r) => (
               <button
                 key={r.key}
@@ -263,8 +269,8 @@ export default function Login() {
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}
-                <span className="relative z-10">
-                  {r.emoji} {r.label}
+                <span className="relative z-10 inline-flex items-center justify-center gap-1.5">
+                  <r.Icon className="w-4 h-4" /> {r.label}
                 </span>
               </button>
             ))}
@@ -283,29 +289,25 @@ export default function Login() {
               {role === "teacher" ? (
                 <div>
                   <label className="text-xs font-semibold text-sky-800/70 mb-1 block">
-                    Teacher ID
+                    {t("teacherId")}
                   </label>
                   <input
                     value={teacherId}
-                    onChange={(e) =>
-                      setTeacherId(e.target.value.replace(/\D/g, "").slice(0, 8))
-                    }
-                    inputMode="numeric"
-                    maxLength={8}
-                    placeholder="8-digit teacher code"
-                    className="w-full rounded-2xl border-2 border-sky-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 tracking-widest"
+                    onChange={(e) => setTeacherId(e.target.value.slice(0, 50))}
+                    placeholder={t("teacherIdPlaceholder")}
+                    className="w-full rounded-2xl border-2 border-sky-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                     autoComplete="username"
                     required
                   />
                   <p className="text-[11px] text-sky-700/50 mt-1.5">
-                    Enter your 8-digit teacher code to sign in directly
+                    {t("teacherIdHint")}
                   </p>
                 </div>
               ) : (
                 <>
                   <div>
                     <label className="text-xs font-semibold text-sky-800/70 mb-1 block">
-                      Username
+                      {t("username")}
                     </label>
                     <input
                       value={username}
@@ -316,7 +318,7 @@ export default function Login() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-sky-800/70 mb-1 block">
-                      Password
+                      {t("password")}
                     </label>
                     <div className="relative">
                       <input
@@ -357,10 +359,10 @@ export default function Login() {
                 disabled={submitting}
               >
                 {submitting
-                  ? "Signing in…"
+                  ? t("signingIn")
                   : role === "teacher"
-                    ? "Login as Teacher"
-                    : "Login as Admin"}
+                    ? t("loginAsTeacher")
+                    : t("loginAsAdmin")}
               </Button>
             </motion.form>
           </AnimatePresence>

@@ -3,19 +3,21 @@ import { Search, BookOpen } from 'lucide-react'
 import Accordion from '../ui/Accordion'
 import StudentCard from './StudentCard'
 import { CLASS_LIST, classesFromStudents } from '../../constants/classes'
+import { useLanguage } from '../../context/LanguageContext'
 
 const groupColors = ['sky', 'leaf', 'sunny']
 
-const statusTabs = [
-  { key: 'All', label: 'All Students', active: 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-soft' },
-  { key: 'Pending', label: 'Pending', active: 'bg-gradient-to-r from-sunny-400 to-tangerine-500 text-white shadow-soft' },
-  { key: 'Completed', label: 'Completed', active: 'bg-gradient-to-r from-leaf-500 to-leaf-600 text-white shadow-soft' },
-]
-
 export default function StudentListing({ students, basePath = '/teacher/students', classesAssigned = [] }) {
+  const { t } = useLanguage()
   const [search, setSearch] = useState('')
   const [classFilter, setClassFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
+
+  const statusTabs = [
+    { key: 'All', label: t('allStudents'), active: 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-soft' },
+    { key: 'Pending', label: t('pending'), active: 'bg-gradient-to-r from-sunny-400 to-tangerine-500 text-white shadow-soft' },
+    { key: 'Completed', label: t('completed'), active: 'bg-gradient-to-r from-leaf-500 to-leaf-600 text-white shadow-soft' },
+  ]
 
   const availableClasses = useMemo(
     () => classesFromStudents(students, classesAssigned),
@@ -40,7 +42,6 @@ export default function StudentListing({ students, basePath = '/teacher/students
     const knownSet = new Set(known.map((g) => g.cls))
     const extra = [...new Set(filtered.map((s) => s.class).filter((c) => c && !knownSet.has(c)))]
       .map((cls) => ({ cls, list: filtered.filter((s) => s.class === cls) }))
-    // Always keep Balvatika at the top of the accordion list
     return [...known, ...extra].sort((a, b) => {
       const order = CLASS_LIST
       const ai = /bal\s*vatika/i.test(a.cls) ? 0 : order.indexOf(a.cls)
@@ -60,7 +61,7 @@ export default function StudentListing({ students, basePath = '/teacher/students
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search student by name..."
+            placeholder={t('searchStudent')}
             className="w-full pl-10 pr-4 py-2.5 rounded-full border border-sky-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
           />
         </div>
@@ -69,7 +70,7 @@ export default function StudentListing({ students, basePath = '/teacher/students
           onChange={(e) => setClassFilter(e.target.value)}
           className="w-full sm:w-auto rounded-full border border-sky-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
         >
-          <option value="All">All Classes</option>
+          <option value="All">{t('allClasses')}</option>
           {filterClasses.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
@@ -77,23 +78,22 @@ export default function StudentListing({ students, basePath = '/teacher/students
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto">
-        {statusTabs.map((t) => (
+        {statusTabs.map((tab) => (
           <button
-            key={t.key}
-            onClick={() => setStatusFilter(t.key)}
+            key={tab.key}
+            onClick={() => setStatusFilter(tab.key)}
             className={`px-4 py-2 rounded-full font-heading font-semibold text-sm whitespace-nowrap transition-all shrink-0 ${
-              statusFilter === t.key ? t.active : 'bg-white border border-sky-200 text-sky-800/70 hover:bg-sky-50'
+              statusFilter === tab.key ? tab.active : 'bg-white border border-sky-200 text-sky-800/70 hover:bg-sky-50'
             }`}
           >
-            {t.label}
+            {tab.label}
           </button>
         ))}
       </div>
 
       {grouped.length === 0 && (
         <div className="text-center py-16 text-sky-700/50">
-          <p className="text-5xl mb-3">🔍</p>
-          <p className="font-heading font-bold">No students match your filters</p>
+          <p className="font-heading font-bold">{t('noStudentsMatch')}</p>
         </div>
       )}
       {grouped.map(({ cls, list }, i) => {
@@ -101,16 +101,16 @@ export default function StudentListing({ students, basePath = '/teacher/students
         const pending = list.filter((s) => s.status === 'Pending').length
         const badgeLabel =
           statusFilter === 'Pending'
-            ? `${pending}/${list.length} pending`
+            ? t('pendingCount', { n: pending, total: list.length })
             : statusFilter === 'Completed'
-              ? `${list.length} completed`
-              : `${completed}/${list.length} completed`
+              ? t('completedCount', { n: list.length })
+              : t('completedOfTotal', { n: completed, total: list.length })
 
         return (
           <Accordion
             key={cls}
             title={cls}
-            subtitle={`${list.length} students`}
+            subtitle={`${list.length} ${t('students')}`}
             icon={BookOpen}
             color={groupColors[i % groupColors.length]}
             badge={

@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ReviewProvider } from './context/ReviewContext'
+import { LanguageProvider } from './context/LanguageContext'
 
 import Landing from './pages/Landing'
 import Login from './pages/Login'
@@ -78,10 +79,12 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ReviewProvider>
-        <AppRoutes />
-      </ReviewProvider>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <ReviewProvider>
+          <AppRoutes />
+        </ReviewProvider>
+      </AuthProvider>
+    </LanguageProvider>
   )
 }
