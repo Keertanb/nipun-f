@@ -346,3 +346,35 @@ export function getCompletedReviews() {
     .map((s) => ({ ...s }))
     .sort((a, b) => (a.reviewDate < b.reviewDate ? 1 : -1))
 }
+
+export function getBlocks(district) {
+  if (!district) return []
+  return [...new Set(schools.filter((s) => s.district === district).map((s) => s.block))]
+}
+
+export function getClusters(district, block) {
+  if (!district || !block) return []
+  return [
+    ...new Set(
+      schools
+        .filter((s) => s.district === district && s.block === block)
+        .map((s) => s.cluster),
+    ),
+  ]
+}
+
+export function getSchoolsByLocation(district, block, cluster) {
+  if (!district || !block || !cluster) return []
+  return schools.filter(
+    (s) => s.district === district && s.block === block && s.cluster === cluster,
+  )
+}
+
+export function getStudentsBySchool(schoolId) {
+  if (!schoolId) return []
+  return students.filter((s) => s.schoolId === schoolId)
+}
+
+export function getStudentById(studentId) {
+  return students.find((s) => s.id === studentId) || null
+}

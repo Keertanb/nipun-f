@@ -15,15 +15,11 @@ import TeacherProfile from './pages/teacher/TeacherProfile'
 
 import AdminLayout from './components/layout/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
-import AdminSchools from './pages/admin/AdminSchools'
-import SchoolManagement from './pages/admin/SchoolManagement'
-import AdminTeachers from './pages/admin/AdminTeachers'
-import TeacherReviews from './pages/admin/TeacherReviews'
+import SchoolStatus from './pages/admin/SchoolStatus'
+import AdminStudentDetail from './pages/admin/AdminStudentDetail'
 import AdminStudents from './pages/admin/AdminStudents'
-import AdminCompletedReviews from './pages/admin/AdminCompletedReviews'
+import ReviewRounds from './pages/admin/ReviewRounds'
 import Verifiers from './pages/admin/Verifiers'
-import Reports from './pages/admin/Reports'
-import Settings from './pages/admin/Settings'
 
 function RequireRole({ role, children }) {
   const { user } = useAuth()
@@ -61,15 +57,11 @@ function AppRoutes() {
         }
       >
         <Route index element={<AdminDashboard />} />
-        <Route path="schools" element={<AdminSchools />} />
-        <Route path="school-tree" element={<SchoolManagement />} />
-        <Route path="teachers" element={<AdminTeachers />} />
-        <Route path="teachers/:teacherId/reviews" element={<TeacherReviews />} />
+        <Route path="school-status" element={<SchoolStatus />} />
+        <Route path="school-status/:schoolId/students/:studentId" element={<AdminStudentDetail />} />
         <Route path="students" element={<AdminStudents />} />
-        <Route path="completed" element={<AdminCompletedReviews />} />
+        <Route path="review-rounds" element={<ReviewRounds />} />
         <Route path="verifiers" element={<Verifiers />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="settings" element={<Settings />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

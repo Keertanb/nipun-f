@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, School, Users, GraduationCap, CheckCircle2,
-  ShieldCheck, BarChart3, Settings, LogOut, Menu,
+  LayoutDashboard, School, Users, ShieldCheck, CalendarRange, LogOut, Menu,
 } from 'lucide-react'
 import Sidebar from './Sidebar'
 import Avatar from '../ui/Avatar'
@@ -11,13 +10,10 @@ import { Star as StarDoodle, Balloon, ABCBlock } from '../illustrations/Doodles'
 
 const items = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admin/schools', label: 'Schools', icon: School },
-  { to: '/admin/teachers', label: 'Teachers', icon: GraduationCap },
+  { to: '/admin/school-status', label: 'School Status', icon: School },
   { to: '/admin/students', label: 'Students', icon: Users },
-  { to: '/admin/completed', label: 'Completed Reviews', icon: CheckCircle2 },
+  { to: '/admin/review-rounds', label: 'Review Rounds', icon: CalendarRange },
   { to: '/admin/verifiers', label: 'Verifiers', icon: ShieldCheck },
-  { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
-  { to: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function AdminLayout() {

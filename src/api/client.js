@@ -31,6 +31,9 @@ export async function apiRequest(path, { method = 'GET', body, auth = true } = {
     Accept: 'application/json',
   }
 
+  const lang = localStorage.getItem('ng_lang')
+  headers['Accept-Language'] = lang === 'en' ? 'en' : 'guj'
+
   if (auth) {
     const session = getSession()
     if (!session?.sessionToken || !session?.userId) {

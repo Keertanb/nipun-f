@@ -116,6 +116,8 @@ export async function fetchTeacherStudents(grade) {
     students: (payload.students || []).map((s) => mapRegistryStudent(s, meta)),
     classesAssigned: payload.classesAssigned || [],
     meta,
+    round: payload.round || null,
+    canSubmit: Boolean(payload.canSubmit),
   }
 }
 

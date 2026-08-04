@@ -28,7 +28,7 @@ export default function StudentDetail() {
   const { studentId } = useParams()
   const navigate = useNavigate()
   const { t } = useLanguage()
-  const { students, submitReview, loading, error, reloadStudents } = useReviews()
+  const { students, submitReview, loading, error, reloadStudents, canSubmit, round } = useReviews()
   const student = useMemo(() => students.find((s) => s.id === studentId), [students, studentId])
 
   const [selected, setSelected] = useState(null)
@@ -37,6 +37,9 @@ export default function StudentDetail() {
   const [celebrate, setCelebrate] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+
+  const roundClosed = !canSubmit
+  const formLocked = submitted || saving || roundClosed
 
   useEffect(() => {
     if (!student) return
@@ -68,7 +71,7 @@ export default function StudentDetail() {
   }
 
   async function handleSubmit() {
-    if (!selected || saving || submitted) return
+    if (!selected || saving || submitted || roundClosed) return
     setSaving(true)
     setSaveError('')
     try {
@@ -85,7 +88,7 @@ export default function StudentDetail() {
       setTimeout(() => confetti({ particleCount: 60, angle: 120, origin: { y: 0.5, x: 0.8 } }), 400)
       setTimeout(() => navigate('/teacher', { replace: true }), 1200)
     } catch (err) {
-      setSaveError(err.message || t('reviewFailed'))
+      setSaveError(err.message || t('roundSubmissionOver'))
       setSaving(false)
     }
   }
@@ -124,6 +127,25 @@ export default function StudentDetail() {
       >
         <ArrowLeft className="w-4 h-4" /> {t('back')}
       </button>
+
+      {roundClosed && (
+        <div className="rounded-2xl border border-tangerine-200 bg-tangerine-50 px-4 py-3 text-sm font-semibold text-tangerine-800">
+          {t('roundSubmissionOver')}
+          {round?.roundNumber ? (
+            <span className="block text-xs font-medium text-tangerine-700/80 mt-1">
+              {t('reviewRound')} {round.roundNumber}
+              {round.endDate ? ` · ${round.startDate} → ${round.endDate}` : ''}
+            </span>
+          ) : null}
+        </div>
+      )}
+
+      {!roundClosed && round?.roundNumber ? (
+        <p className="text-xs font-semibold text-sky-700/60">
+          {t('reviewRound')} {round.roundNumber}
+          {round.endDate ? ` · ${round.startDate} → ${round.endDate}` : ''}
+        </p>
+      ) : null}
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -180,7 +202,7 @@ export default function StudentDetail() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {REVIEW_LEVELS.map((m) => {
             const isActive = selected === m.key
-            const locked = submitted || saving
+            const locked = formLocked
             const Icon = levelIcons[m.icon]
             return (
               <motion.button
@@ -223,7 +245,7 @@ export default function StudentDetail() {
         <div className="mt-5 sm:mt-6">
           <label className="text-sm font-semibold text-sky-800/80 mb-2 block">{t('optionalRemarks')}</label>
           <textarea
-            disabled={submitted || saving}
+            disabled={formLocked}
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
             rows={4}
@@ -233,8 +255,12 @@ export default function StudentDetail() {
         </div>
 
         <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row sm:items-center gap-3">
-          {!submitted ? (
-            <Button size="lg" disabled={!selected || saving} onClick={handleSubmit} className={`w-full sm:w-auto ${!selected || saving ? 'opacity-40 cursor-not-allowed' : ''}`}>
+          {roundClosed && !submitted ? (
+            <div className="flex items-center gap-2 text-tangerine-700 font-heading font-bold">
+              {t('roundSubmissionOver')}
+            </div>
+          ) : !submitted ? (
+            <Button size="lg" disabled={!selected || saving || roundClosed} onClick={handleSubmit} className={`w-full sm:w-auto ${!selected || saving || roundClosed ? 'opacity-40 cursor-not-allowed' : ''}`}>
               {saving ? t('saving') : t('submitReview')}
             </Button>
           ) : (
@@ -242,7 +268,7 @@ export default function StudentDetail() {
               <CheckCircle2 className="w-6 h-6 shrink-0" /> {t('reviewSubmitted')}
             </div>
           )}
-          {!submitted && !saving && <p className="text-xs text-sky-700/50">{t('onlyOneOption')}</p>}
+          {!submitted && !saving && !roundClosed && <p className="text-xs text-sky-700/50">{t('onlyOneOption')}</p>}
         </div>
         {saveError ? <p className="mt-3 text-sm text-red-600">{saveError}</p> : null}
 

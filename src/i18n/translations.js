@@ -64,6 +64,8 @@ export const translations = {
     reviewFailed: 'Failed to save review',
     boy: 'Boy',
     girl: 'Girl',
+    reviewRound: 'Review Round',
+    roundSubmissionOver: "This round's review submission is over",
     // Review levels (API keys stay Bad/Average/Good)
     levelBad: 'Emerging (0 to 30%)',
     levelAverage: 'Progressive (31 to 79%)',
@@ -143,6 +145,8 @@ export const translations = {
     reviewFailed: 'સમીક્ષા સાચવવામાં નિષ્ફળ',
     boy: 'છોકરો',
     girl: 'છોકરી',
+    reviewRound: 'સમીક્ષા રાઉન્ડ',
+    roundSubmissionOver: 'આ રાઉન્ડની સમીક્ષા સબમિશન સમાપ્ત થઈ ગઈ છે',
     levelBad: 'ઉદયમાન (0 થી 30%)',
     levelAverage: 'પ્રગતિશીલ (31 થી 79%)',
     levelGood: 'નિપુણ (80% કે તેથી વધુ)',
