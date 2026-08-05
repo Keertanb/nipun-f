@@ -31,6 +31,11 @@ export async function apiRequest(path, { method = 'GET', body, auth = true } = {
     Accept: 'application/json',
   }
 
+  // Skip ngrok free interstitial warning page
+  if (String(API_BASE).includes('ngrok')) {
+    headers['ngrok-skip-browser-warning'] = 'true'
+  }
+
   const lang = localStorage.getItem('ng_lang')
   headers['Accept-Language'] = lang === 'en' ? 'en' : 'guj'
 
