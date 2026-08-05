@@ -18,10 +18,22 @@ import { useLanguage } from '../../context/LanguageContext'
 import { REVIEW_LEVELS } from '../../i18n/translations'
 import { Star as StarDoodle, Balloon, ABCBlock, SquiggleUnderline, Kid, SolidShape, Crayon } from '../../components/illustrations/Doodles'
 
+const SUBJECTS = [
+  { key: 'Gujarati', labelKey: 'subjectGujarati' },
+  { key: 'Maths', labelKey: 'subjectMaths' },
+]
+
 const levelIcons = {
   sprout: Sprout,
   trending: TrendingUp,
   award: Award,
+}
+
+function emptySubjectState(saved) {
+  return {
+    review: saved?.review || null,
+    remarks: saved?.remarks || '',
+  }
 }
 
 export default function StudentDetail() {
@@ -31,20 +43,25 @@ export default function StudentDetail() {
   const { students, submitReview, loading, error, reloadStudents, canSubmit, round } = useReviews()
   const student = useMemo(() => students.find((s) => s.id === studentId), [students, studentId])
 
-  const [selected, setSelected] = useState(null)
-  const [remarks, setRemarks] = useState('')
+  const [bySubject, setBySubject] = useState({
+    Gujarati: { review: null, remarks: '' },
+    Maths: { review: null, remarks: '' },
+  })
   const [submitted, setSubmitted] = useState(false)
   const [celebrate, setCelebrate] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
   const roundClosed = !canSubmit
+  const bothSelected = SUBJECTS.every((s) => Boolean(bySubject[s.key]?.review))
   const formLocked = submitted || saving || roundClosed
 
   useEffect(() => {
     if (!student) return
-    setSelected(student.review || null)
-    setRemarks(student.remarks || '')
+    setBySubject({
+      Gujarati: emptySubjectState(student.subjects?.Gujarati),
+      Maths: emptySubjectState(student.subjects?.Maths),
+    })
     setSubmitted(student.status === 'Completed')
   }, [student])
 
@@ -70,23 +87,50 @@ export default function StudentDetail() {
     )
   }
 
+  function setSubjectReview(subject, review) {
+    if (formLocked) return
+    setBySubject((prev) => ({
+      ...prev,
+      [subject]: { ...prev[subject], review },
+    }))
+  }
+
+  function setSubjectRemarks(subject, remarks) {
+    if (formLocked) return
+    setBySubject((prev) => ({
+      ...prev,
+      [subject]: { ...prev[subject], remarks },
+    }))
+  }
+
   async function handleSubmit() {
-    if (!selected || saving || submitted || roundClosed) return
+    if (!bothSelected || saving || submitted || roundClosed) return
     setSaving(true)
     setSaveError('')
     try {
-      await submitReview(student.id, { review: selected, remarks })
-      setSubmitted(true)
-      setCelebrate(true)
-      confetti({
-        particleCount: 140,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#22A3F5', '#22B566', '#FFBE22', '#FA5411'],
+      const result = await submitReview(student.id, {
+        reviews: SUBJECTS.map((s) => ({
+          subject: s.key,
+          review: bySubject[s.key].review,
+          remarks: bySubject[s.key].remarks || '',
+        })),
       })
-      setTimeout(() => confetti({ particleCount: 60, angle: 100, origin: { y: 0.5, x: 0.2 } }), 200)
-      setTimeout(() => confetti({ particleCount: 60, angle: 120, origin: { y: 0.5, x: 0.8 } }), 400)
-      setTimeout(() => navigate('/teacher', { replace: true }), 1200)
+      const done = result.status === 'Completed' || result.isDone
+      setSubmitted(done)
+      if (done) {
+        setCelebrate(true)
+        confetti({
+          particleCount: 140,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#22A3F5', '#22B566', '#FFBE22', '#FA5411'],
+        })
+        setTimeout(() => confetti({ particleCount: 60, angle: 100, origin: { y: 0.5, x: 0.2 } }), 200)
+        setTimeout(() => confetti({ particleCount: 60, angle: 120, origin: { y: 0.5, x: 0.8 } }), 400)
+        setTimeout(() => navigate('/teacher', { replace: true }), 1200)
+      } else {
+        setSaving(false)
+      }
     } catch (err) {
       setSaveError(err.message || t('roundSubmissionOver'))
       setSaving(false)
@@ -169,6 +213,7 @@ export default function StudentDetail() {
               {t('rollNo')} {student.rollNo} &middot; {student.class} &middot; {genderLabel}
               {student.age != null ? ` · ${t('age')} ${student.age}` : ''}
             </p>
+            <p className="text-white/70 text-xs mt-2">{t('bothSubjectsRequired')}</p>
           </div>
         </div>
       </motion.div>
@@ -192,75 +237,94 @@ export default function StudentDetail() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl3 shadow-card border border-sky-100 p-4 sm:p-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-dots -z-10" />
-        <ABCBlock className="w-7 h-7 sm:w-8 sm:h-8 top-3 right-3 sm:top-4 sm:right-6" letter="A" color="#22A3F5" delay={0.4} />
-        <h2 className="font-heading font-extrabold text-lg sm:text-xl text-sky-900 mb-1">{t('overallPerformance')}</h2>
-        <SquiggleUnderline className="w-28 h-3 mt-0.5 mb-2" color="#FFBE22" />
-        <p className="text-sky-800/60 text-xs sm:text-sm mb-4 sm:mb-6">{t('pickPerformance')}</p>
+      {SUBJECTS.map((subject) => {
+        const state = bySubject[subject.key]
+        return (
+          <div
+            key={subject.key}
+            className="bg-white rounded-xl3 shadow-card border border-sky-100 p-4 sm:p-8 relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-grid-dots -z-10" />
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <h2 className="font-heading font-extrabold text-lg sm:text-xl text-sky-900">
+                {t(subject.labelKey)}
+              </h2>
+              {state.review ? (
+                <span className="inline-flex items-center gap-1 text-xs font-heading font-bold text-leaf-700 bg-leaf-50 px-2.5 py-1 rounded-full">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {t('selected')}
+                </span>
+              ) : null}
+            </div>
+            <SquiggleUnderline className="w-28 h-3 mt-0.5 mb-2" color="#FFBE22" />
+            <p className="text-sky-800/60 text-xs sm:text-sm mb-4 sm:mb-6">{t('pickSubjectPerformance')}</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {REVIEW_LEVELS.map((m) => {
-            const isActive = selected === m.key
-            const locked = formLocked
-            const Icon = levelIcons[m.icon]
-            return (
-              <motion.button
-                key={m.key}
-                type="button"
-                disabled={locked}
-                onClick={() => {
-                  if (locked) return
-                  setSelected(m.key)
-                }}
-                whileHover={!locked ? { scale: 1.03, y: -3 } : {}}
-                whileTap={!locked ? { scale: 0.97 } : {}}
-                className={`relative rounded-2xl sm:rounded-xl3 p-4 sm:p-5 flex flex-col items-center gap-2 border-2 transition-all text-center min-h-[8.5rem] ${
-                  isActive
-                    ? `border-transparent bg-gradient-to-br ${m.color} shadow-glow text-white`
-                    : 'border-sky-100 bg-sky-50/40 text-sky-900 hover:border-sky-200'
-                } ${locked && !isActive ? 'opacity-40' : ''} ${locked ? 'pointer-events-none cursor-not-allowed' : ''}`}
-                aria-disabled={locked}
-              >
-                <span className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isActive ? 'bg-white/20' : 'bg-white shadow-soft'}`}>
-                  <Icon className={`w-6 h-6 ${isActive ? 'text-white' : m.text}`} strokeWidth={2.25} />
-                </span>
-                <span className="font-heading font-bold text-sm sm:text-[15px] leading-snug">
-                  {t(m.labelKey)}
-                </span>
-                {isActive && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-2 -right-2 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white flex items-center justify-center shadow-soft"
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {REVIEW_LEVELS.map((m) => {
+                const isActive = state.review === m.key
+                const Icon = levelIcons[m.icon]
+                return (
+                  <motion.button
+                    key={`${subject.key}-${m.key}`}
+                    type="button"
+                    disabled={formLocked}
+                    onClick={() => setSubjectReview(subject.key, m.key)}
+                    whileHover={!formLocked ? { scale: 1.03, y: -3 } : {}}
+                    whileTap={!formLocked ? { scale: 0.97 } : {}}
+                    className={`relative rounded-2xl sm:rounded-xl3 p-4 sm:p-5 flex flex-col items-center gap-2 border-2 transition-all text-center min-h-[8.5rem] ${
+                      isActive
+                        ? `border-transparent bg-gradient-to-br ${m.color} shadow-glow text-white`
+                        : 'border-sky-100 bg-sky-50/40 text-sky-900 hover:border-sky-200'
+                    } ${formLocked && !isActive ? 'opacity-40' : ''} ${formLocked ? 'pointer-events-none cursor-not-allowed' : ''}`}
+                    aria-disabled={formLocked}
                   >
-                    <CheckCircle2 className={`w-4 h-4 sm:w-5 sm:h-5 ${m.text}`} />
-                  </motion.div>
-                )}
-              </motion.button>
-            )
-          })}
-        </div>
+                    <span className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isActive ? 'bg-white/20' : 'bg-white shadow-soft'}`}>
+                      <Icon className={`w-6 h-6 ${isActive ? 'text-white' : m.text}`} strokeWidth={2.25} />
+                    </span>
+                    <span className="font-heading font-bold text-sm sm:text-[15px] leading-snug">
+                      {t(m.labelKey)}
+                    </span>
+                    {isActive && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-2 -right-2 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white flex items-center justify-center shadow-soft"
+                      >
+                        <CheckCircle2 className={`w-4 h-4 sm:w-5 sm:h-5 ${m.text}`} />
+                      </motion.div>
+                    )}
+                  </motion.button>
+                )
+              })}
+            </div>
 
-        <div className="mt-5 sm:mt-6">
-          <label className="text-sm font-semibold text-sky-800/80 mb-2 block">{t('optionalRemarks')}</label>
-          <textarea
-            disabled={formLocked}
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            rows={4}
-            placeholder={t('remarksPlaceholder')}
-            className="w-full rounded-2xl border border-sky-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-sky-50/60 disabled:cursor-not-allowed"
-          />
-        </div>
+            <div className="mt-5 sm:mt-6">
+              <label className="text-sm font-semibold text-sky-800/80 mb-2 block">{t('optionalRemarks')}</label>
+              <textarea
+                disabled={formLocked}
+                value={state.remarks}
+                onChange={(e) => setSubjectRemarks(subject.key, e.target.value)}
+                rows={3}
+                placeholder={t('remarksPlaceholder')}
+                className="w-full rounded-2xl border border-sky-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-sky-50/60 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+        )
+      })}
 
-        <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="bg-white rounded-xl3 shadow-card border border-sky-100 p-4 sm:p-6 relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           {roundClosed && !submitted ? (
             <div className="flex items-center gap-2 text-tangerine-700 font-heading font-bold">
               {t('roundSubmissionOver')}
             </div>
           ) : !submitted ? (
-            <Button size="lg" disabled={!selected || saving || roundClosed} onClick={handleSubmit} className={`w-full sm:w-auto ${!selected || saving || roundClosed ? 'opacity-40 cursor-not-allowed' : ''}`}>
+            <Button
+              size="lg"
+              disabled={!bothSelected || saving || roundClosed}
+              onClick={handleSubmit}
+              className={`w-full sm:w-auto ${!bothSelected || saving || roundClosed ? 'opacity-40 cursor-not-allowed' : ''}`}
+            >
               {saving ? t('saving') : t('submitReview')}
             </Button>
           ) : (
@@ -268,7 +332,9 @@ export default function StudentDetail() {
               <CheckCircle2 className="w-6 h-6 shrink-0" /> {t('reviewSubmitted')}
             </div>
           )}
-          {!submitted && !saving && !roundClosed && <p className="text-xs text-sky-700/50">{t('onlyOneOption')}</p>}
+          {!submitted && !saving && !roundClosed && (
+            <p className="text-xs text-sky-700/50">{t('bothSubjectsHint')}</p>
+          )}
         </div>
         {saveError ? <p className="mt-3 text-sm text-red-600">{saveError}</p> : null}
 

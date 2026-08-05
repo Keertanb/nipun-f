@@ -39,6 +39,10 @@ function mapGender(gender) {
 }
 
 export function mapRegistryStudent(student, meta = {}) {
+  const subjects = student.subjects || {
+    Gujarati: null,
+    Maths: null,
+  }
   return {
     id: student.studentid,
     name: student.name,
@@ -55,8 +59,12 @@ export function mapRegistryStudent(student, meta = {}) {
     cluster: meta.cluster || '',
     attendance: null,
     status: student.status || (student.isDone ? 'Completed' : 'Pending'),
-    review: student.review || null,
-    remarks: student.remarks || '',
+    subjects: {
+      Gujarati: subjects.Gujarati || null,
+      Maths: subjects.Maths || null,
+    },
+    review: subjects.Gujarati?.review || student.review || null,
+    remarks: subjects.Gujarati?.remarks || student.remarks || '',
     reviewDate: student.reviewDate || null,
     avatarSeed: student.studentid,
     section: student.section || '',
@@ -121,10 +129,10 @@ export async function fetchTeacherStudents(grade) {
   }
 }
 
-export async function submitStudentReview(studentId, { review, remarks }) {
+export async function submitStudentReview(studentId, { reviews }) {
   const res = await apiRequest(`/reviews/${encodeURIComponent(studentId)}`, {
     method: 'PUT',
-    body: { review, remarks: remarks || '' },
+    body: { reviews },
   })
   return res.data
 }

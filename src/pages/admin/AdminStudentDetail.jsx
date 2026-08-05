@@ -17,6 +17,11 @@ import { fetchSchoolStudents } from '../../api/master'
 import { REVIEW_LEVELS } from '../../i18n/translations'
 import { SquiggleUnderline } from '../../components/illustrations/Doodles'
 
+const SUBJECTS = [
+  { key: 'Gujarati', label: 'Gujarati' },
+  { key: 'Maths', label: 'Maths' },
+]
+
 const levelIcons = {
   sprout: Sprout,
   trending: TrendingUp,
@@ -145,54 +150,59 @@ export default function AdminStudentDetail() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl3 shadow-card border border-sky-100 p-4 sm:p-8">
-        <h2 className="font-heading font-extrabold text-lg sm:text-xl text-sky-900 mb-1">
-          Overall Student Performance
-        </h2>
-        <SquiggleUnderline className="w-28 h-3 mt-0.5 mb-4" color="#FFBE22" />
+      {SUBJECTS.map((subject) => {
+        const subjectReview = student.subjects?.[subject.key]
+        return (
+          <div key={subject.key} className="bg-white rounded-xl3 shadow-card border border-sky-100 p-4 sm:p-8">
+            <h2 className="font-heading font-extrabold text-lg sm:text-xl text-sky-900 mb-1">
+              {subject.label}
+            </h2>
+            <SquiggleUnderline className="w-28 h-3 mt-0.5 mb-4" color="#FFBE22" />
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {REVIEW_LEVELS.map((m) => {
-            const isActive = student.review === m.key
-            const Icon = levelIcons[m.icon]
-            return (
-              <div
-                key={m.key}
-                className={`relative rounded-2xl sm:rounded-xl3 p-4 sm:p-5 flex flex-col items-center gap-2 border-2 text-center min-h-[8.5rem] ${
-                  isActive
-                    ? `border-transparent bg-gradient-to-br ${m.color} shadow-glow text-white`
-                    : 'border-sky-100 bg-sky-50/40 text-sky-900 opacity-50'
-                }`}
-              >
-                <span className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isActive ? 'bg-white/20' : 'bg-white shadow-soft'}`}>
-                  <Icon className={`w-6 h-6 ${isActive ? 'text-white' : m.text}`} strokeWidth={2.25} />
-                </span>
-                <span className="font-heading font-bold text-sm sm:text-[15px] leading-snug">
-                  {levelLabels[m.key]}
-                </span>
-                {isActive && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white flex items-center justify-center shadow-soft">
-                    <CheckCircle2 className={`w-4 h-4 sm:w-5 sm:h-5 ${m.text}`} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {REVIEW_LEVELS.map((m) => {
+                const isActive = subjectReview?.review === m.key
+                const Icon = levelIcons[m.icon]
+                return (
+                  <div
+                    key={`${subject.key}-${m.key}`}
+                    className={`relative rounded-2xl sm:rounded-xl3 p-4 sm:p-5 flex flex-col items-center gap-2 border-2 text-center min-h-[8.5rem] ${
+                      isActive
+                        ? `border-transparent bg-gradient-to-br ${m.color} shadow-glow text-white`
+                        : 'border-sky-100 bg-sky-50/40 text-sky-900 opacity-50'
+                    }`}
+                  >
+                    <span className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isActive ? 'bg-white/20' : 'bg-white shadow-soft'}`}>
+                      <Icon className={`w-6 h-6 ${isActive ? 'text-white' : m.text}`} strokeWidth={2.25} />
+                    </span>
+                    <span className="font-heading font-bold text-sm sm:text-[15px] leading-snug">
+                      {levelLabels[m.key]}
+                    </span>
+                    {isActive && (
+                      <div className="absolute -top-2 -right-2 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white flex items-center justify-center shadow-soft">
+                        <CheckCircle2 className={`w-4 h-4 sm:w-5 sm:h-5 ${m.text}`} />
+                      </div>
+                    )}
                   </div>
-                )}
+                )
+              })}
+            </div>
+
+            <div className="mt-5 sm:mt-6">
+              <p className="text-sm font-semibold text-sky-800/80 mb-2">Remarks</p>
+              <div className="rounded-2xl border border-sky-200 bg-sky-50/60 px-4 py-3 text-sm text-sky-900 min-h-[4rem]">
+                {subjectReview?.remarks || (subjectReview ? 'No remarks added.' : 'Review pending — no remarks yet.')}
               </div>
-            )
-          })}
-        </div>
-
-        <div className="mt-5 sm:mt-6">
-          <p className="text-sm font-semibold text-sky-800/80 mb-2">Remarks</p>
-          <div className="rounded-2xl border border-sky-200 bg-sky-50/60 px-4 py-3 text-sm text-sky-900 min-h-[5rem]">
-            {student.remarks || (completed ? 'No remarks added.' : 'Review pending — no remarks yet.')}
+            </div>
           </div>
-        </div>
+        )
+      })}
 
-        {completed && student.reviewDate && (
-          <p className="mt-4 text-xs text-sky-700/50">
-            Reviewed on {typeof student.reviewDate === 'string' ? student.reviewDate.slice(0, 10) : String(student.reviewDate)}
-          </p>
-        )}
-      </div>
+      {completed && student.reviewDate && (
+        <p className="text-xs text-sky-700/50">
+          Reviewed on {typeof student.reviewDate === 'string' ? student.reviewDate.slice(0, 10) : String(student.reviewDate)}
+        </p>
+      )}
     </div>
   )
 }

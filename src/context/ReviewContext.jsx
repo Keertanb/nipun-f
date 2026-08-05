@@ -54,16 +54,20 @@ export function ReviewProvider({ children }) {
     loadStudents()
   }, [loadStudents])
 
-  async function submitReview(studentId, { review, remarks }) {
-    const result = await submitStudentReview(studentId, { review, remarks })
+  async function submitReview(studentId, { reviews }) {
+    const result = await submitStudentReview(studentId, { reviews })
     setStudents((prev) =>
       prev.map((s) =>
         s.id === studentId
           ? {
               ...s,
-              status: 'Completed',
-              review: result.review,
-              remarks: result.remarks,
+              status: result.status || 'Pending',
+              subjects: {
+                Gujarati: result.subjects?.Gujarati || null,
+                Maths: result.subjects?.Maths || null,
+              },
+              review: result.subjects?.Gujarati?.review || null,
+              remarks: result.subjects?.Gujarati?.remarks || '',
               reviewDate: result.reviewDate,
             }
           : s
