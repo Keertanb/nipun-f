@@ -31,14 +31,12 @@ function isValidSso(sso) {
  */
 export function getUserConsent() {
   return new Promise((resolve, reject) => {
-    const mini = typeof window !== "undefined" ? window.MiniAppExtension : null;
-    console.log(mini, "mini");
-    if (!mini?.getUserConsent) {
+    if (!MiniAppExtension?.getUserConsent) {
       reject(new Error("SwiftChat MiniApp SDK is not available"));
       return;
     }
     try {
-      mini.getUserConsent((data) => {
+      MiniAppExtension.getUserConsent((data) => {
         if (data?.success && data.payload && isValidSso(data.payload)) {
           setSsoDetails(data.payload);
           resolve(data.payload);
