@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ReviewProvider } from './context/ReviewContext'
 import { LanguageProvider } from './context/LanguageContext'
@@ -21,17 +21,54 @@ import AdminStudents from './pages/admin/AdminStudents'
 import ReviewRounds from './pages/admin/ReviewRounds'
 import Verifiers from './pages/admin/Verifiers'
 
+function homeForRole(role) {
+  if (role === 'teacher') return '/teacher'
+  if (role === 'admin') return '/admin'
+  return '/'
+}
+
+/** Public pages (landing / login). Logged-in users are sent to their home. */
+function GuestOnly({ children }) {
+  const { user } = useAuth()
+  if (user?.role) return <Navigate to={homeForRole(user.role)} replace />
+  return children
+}
+
+/** Role-gated app areas. Unauthenticated / wrong role → login. */
 function RequireRole({ role, children }) {
   const { user } = useAuth()
-  if (!user || user.role !== role) return <Navigate to="/login" replace />
+  const location = useLocation()
+
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  }
+
+  if (user.role !== role) {
+    return <Navigate to={homeForRole(user.role)} replace />
+  }
+
   return children
 }
 
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
+      <Route
+        path="/"
+        element={
+          <GuestOnly>
+            <Landing />
+          </GuestOnly>
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <GuestOnly>
+            <Login />
+          </GuestOnly>
+        }
+      />
 
       <Route
         path="/teacher"

@@ -16,6 +16,7 @@ import Badge from '../../components/ui/Badge'
 import { useReviews } from '../../context/ReviewContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { REVIEW_LEVELS } from '../../i18n/translations'
+import { fetchTeacherStageWorkspace, saveTeacherIntervention } from '../../api/stages'
 import { Star as StarDoodle, Balloon, ABCBlock, SquiggleUnderline, Kid, SolidShape, Crayon } from '../../components/illustrations/Doodles'
 
 const SUBJECTS = [
@@ -39,8 +40,9 @@ function emptySubjectState(saved) {
 export default function StudentDetail() {
   const { studentId } = useParams()
   const navigate = useNavigate()
-  const { t } = useLanguage()
-  const { students, submitReview, loading, error, reloadStudents, canSubmit, round } = useReviews()
+  const { t, lang } = useLanguage()
+  const { students, submitReview, loading, error, reloadStudents, canSubmit, round, stage, workspace, updateWorkspace } =
+    useReviews()
   const student = useMemo(() => students.find((s) => s.id === studentId), [students, studentId])
 
   const [bySubject, setBySubject] = useState({
@@ -51,10 +53,30 @@ export default function StudentDetail() {
   const [celebrate, setCelebrate] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [supportBySubject, setSupportBySubject] = useState({
+    Gujarati: { actions: [], notes: '' },
+    Maths: { actions: [], notes: '' },
+  })
+  const [savingSupport, setSavingSupport] = useState(false)
 
   const roundClosed = !canSubmit
   const bothSelected = SUBJECTS.every((s) => Boolean(bySubject[s.key]?.review))
   const formLocked = submitted || saving || roundClosed
+  const showSupport =
+    stage &&
+    (stage.stageType === 'intervention' || stage.stageType === 'summary') &&
+    Boolean(workspace)
+
+  const needsSupportSubjects = useMemo(() => {
+    const set = new Set(
+      (workspace?.needsSupport || [])
+        .filter((n) => n.studentId === studentId)
+        .map((n) => n.subject),
+    )
+    return set
+  }, [workspace?.needsSupport, studentId])
+
+  const suggestedActions = workspace?.suggestedActions || []
 
   useEffect(() => {
     if (!student) return
@@ -64,6 +86,25 @@ export default function StudentDetail() {
     })
     setSubmitted(student.status === 'Completed')
   }, [student])
+
+  useEffect(() => {
+    if (!workspace || !studentId) return
+    const next = {
+      Gujarati: { actions: [], notes: '' },
+      Maths: { actions: [], notes: '' },
+    }
+    const source = [...(workspace.interventions || []), ...(workspace.priorInterventions || [])]
+    source.forEach((item) => {
+      if (item.studentId !== studentId) return
+      if (item.subject === 'Gujarati' || item.subject === 'Maths') {
+        next[item.subject] = {
+          actions: item.actions || [],
+          notes: item.notes || '',
+        }
+      }
+    })
+    setSupportBySubject(next)
+  }, [workspace, studentId])
 
   if (loading) {
     return <p className="text-sky-800/60 text-sm py-20 text-center">{t('loadingStudent')}</p>
@@ -101,6 +142,42 @@ export default function StudentDetail() {
       ...prev,
       [subject]: { ...prev[subject], remarks },
     }))
+  }
+
+  function toggleAction(subject, actionId) {
+    if (roundClosed || !showSupport) return
+    setSupportBySubject((prev) => {
+      const current = prev[subject] || { actions: [], notes: '' }
+      const has = current.actions.includes(actionId)
+      return {
+        ...prev,
+        [subject]: {
+          ...current,
+          actions: has ? current.actions.filter((a) => a !== actionId) : [...current.actions, actionId],
+        },
+      }
+    })
+  }
+
+  async function handleSaveSupport(subject) {
+    if (!stage?.id || roundClosed) return
+    setSavingSupport(true)
+    setSaveError('')
+    try {
+      const draft = supportBySubject[subject] || { actions: [], notes: '' }
+      await saveTeacherIntervention(stage.id, {
+        studentId: student.id,
+        subject,
+        actions: draft.actions,
+        notes: draft.notes || '',
+      })
+      const nextWs = await fetchTeacherStageWorkspace()
+      updateWorkspace?.(nextWs)
+    } catch (err) {
+      setSaveError(err.message || t('reviewFailed'))
+    } finally {
+      setSavingSupport(false)
+    }
   }
 
   async function handleSubmit() {
@@ -187,6 +264,7 @@ export default function StudentDetail() {
       {!roundClosed && round?.roundNumber ? (
         <p className="text-xs font-semibold text-sky-700/60">
           {t('reviewRound')} {round.roundNumber}
+          {stage?.name ? ` · ${t('currentStage')}: ${stage.name}` : ''}
           {round.endDate ? ` · ${round.startDate} → ${round.endDate}` : ''}
         </p>
       ) : null}
@@ -239,6 +317,8 @@ export default function StudentDetail() {
 
       {SUBJECTS.map((subject) => {
         const state = bySubject[subject.key]
+        const needsSupport = needsSupportSubjects.has(subject.key)
+        const support = supportBySubject[subject.key] || { actions: [], notes: '' }
         return (
           <div
             key={subject.key}
@@ -256,6 +336,59 @@ export default function StudentDetail() {
               ) : null}
             </div>
             <SquiggleUnderline className="w-28 h-3 mt-0.5 mb-2" color="#FFBE22" />
+
+            {showSupport && needsSupport ? (
+              <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50/60 p-3 sm:p-4 space-y-3">
+                <p className="font-heading font-bold text-sm text-sky-900">{t('supportPlan')}</p>
+                <p className="text-xs text-sky-800/60">{t('selectActions')}</p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedActions.map((action) => {
+                    const active = support.actions.includes(action.id)
+                    const label = lang === 'gu' ? action.labelGu : action.labelEn
+                    return (
+                      <button
+                        key={action.id}
+                        type="button"
+                        disabled={roundClosed}
+                        onClick={() => toggleAction(subject.key, action.id)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                          active
+                            ? 'bg-sky-600 text-white border-sky-600'
+                            : 'bg-white text-sky-800 border-sky-200 hover:border-sky-400'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-semibold text-sky-700/60">{t('supportNotes')}</span>
+                  <textarea
+                    disabled={roundClosed}
+                    rows={2}
+                    value={support.notes}
+                    onChange={(e) =>
+                      setSupportBySubject((prev) => ({
+                        ...prev,
+                        [subject.key]: { ...support, notes: e.target.value },
+                      }))
+                    }
+                    placeholder={t('supportNotesPlaceholder')}
+                    className="w-full rounded-2xl border border-sky-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-sky-50/60"
+                  />
+                </label>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={savingSupport || roundClosed}
+                  onClick={() => handleSaveSupport(subject.key)}
+                >
+                  {savingSupport ? t('saving') : t('saveSupportPlan')}
+                </Button>
+              </div>
+            ) : null}
+
             <p className="text-sky-800/60 text-xs sm:text-sm mb-4 sm:mb-6">{t('pickSubjectPerformance')}</p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">

@@ -126,6 +126,7 @@ export async function fetchTeacherStudents(grade) {
     meta,
     round: payload.round || null,
     canSubmit: Boolean(payload.canSubmit),
+    stage: payload.stage || null,
   }
 }
 

@@ -71,5 +71,7 @@ export async function fetchSchoolStudents(schoolId) {
     students: (payload.students || []).map((s) => mapRegistryStudent(s, meta)),
     matrix: payload.matrix || null,
     totals: payload.totals || null,
+    round: payload.round || null,
+    canSubmit: Boolean(payload.canSubmit),
   }
 }

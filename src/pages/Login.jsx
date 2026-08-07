@@ -77,7 +77,7 @@ export default function Login() {
       setSubmitting(true);
       try {
         await loginAsTeacher(code);
-        navigate("/teacher");
+        navigate("/teacher", { replace: true });
       } catch (err) {
         setFormError(err.message || "Login failed. Please try again.");
       } finally {
@@ -86,8 +86,24 @@ export default function Login() {
       return;
     }
 
-    loginAsAdmin(username || "admin");
-    navigate("/admin");
+    const adminId = username.trim();
+    if (!adminId) {
+      setFormError(t("username"));
+      return;
+    }
+    if (!password) {
+      setFormError(t("password"));
+      return;
+    }
+    setSubmitting(true);
+    try {
+      loginAsAdmin(adminId, password);
+      navigate("/admin", { replace: true });
+    } catch (err) {
+      setFormError(err.message || "Login failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -312,7 +328,7 @@ export default function Login() {
                     <input
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="admin.gujarat"
+                      placeholder="ad2400"
                       className="w-full rounded-2xl border-2 border-sky-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                     />
                   </div>

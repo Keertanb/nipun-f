@@ -21,7 +21,7 @@ export default function TeacherLayout() {
 
   async function handleLogout() {
     await logout()
-    navigate('/login')
+    navigate('/login', { replace: true })
   }
 
   return (

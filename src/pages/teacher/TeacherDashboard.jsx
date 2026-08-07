@@ -16,10 +16,11 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { useReviews } from '../../context/ReviewContext'
 import { useLanguage } from '../../context/LanguageContext'
+import TeacherStagePanel from '../../components/teacher/TeacherStagePanel'
 
 export default function TeacherDashboard() {
   const { user } = useAuth()
-  const { students, loading, error, reloadStudents } = useReviews()
+  const { students, loading, error, reloadStudents, updateWorkspace } = useReviews()
   const { t } = useLanguage()
   const teacher = user?.teacher
 
@@ -115,6 +116,13 @@ export default function TeacherDashboard() {
             delay={0.1}
           />
         </div>
+
+        <TeacherStagePanel
+          onWorkspaceChange={(ws) => {
+            updateWorkspace?.(ws)
+            if (ws?.activeStage) reloadStudents()
+          }}
+        />
 
         <div className="relative">
           <div

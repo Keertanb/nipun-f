@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { useAuth } from './AuthContext'
 import { fetchTeacherStudents, submitStudentReview } from '../api/teacher'
 import { fetchActiveRound } from '../api/rounds'
+import { fetchTeacherStageWorkspace } from '../api/stages'
 
 const ReviewContext = createContext(null)
 
@@ -12,20 +13,28 @@ export function ReviewProvider({ children }) {
   const [error, setError] = useState(null)
   const [round, setRound] = useState(null)
   const [canSubmit, setCanSubmit] = useState(false)
+  const [stage, setStage] = useState(null)
+  const [workspace, setWorkspace] = useState(null)
 
   const loadStudents = useCallback(async () => {
     if (user?.role !== 'teacher' || !user?.teacher?.id) {
       setStudents([])
       setRound(null)
       setCanSubmit(false)
+      setStage(null)
+      setWorkspace(null)
       return
     }
 
     setLoading(true)
     setError(null)
     try {
-      const [{ students: list, classesAssigned, meta, round: listRound, canSubmit: listCanSubmit }, active] =
-        await Promise.all([fetchTeacherStudents(), fetchActiveRound()])
+      const [{ students: list, classesAssigned, meta, round: listRound, canSubmit: listCanSubmit, stage: listStage }, active, stageWs] =
+        await Promise.all([
+          fetchTeacherStudents(),
+          fetchActiveRound(),
+          fetchTeacherStageWorkspace().catch(() => null),
+        ])
 
       const withSchool = list.map((s) => ({
         ...s,
@@ -39,12 +48,16 @@ export function ReviewProvider({ children }) {
       setStudents(withSchool)
       setRound(listRound || active.round || null)
       setCanSubmit(Boolean(listCanSubmit ?? active.canSubmit))
+      setStage(listStage || stageWs?.activeStage || null)
+      setWorkspace(stageWs)
       updateTeacherMeta?.({ classesAssigned })
     } catch (err) {
       setError(err.message || 'Failed to load students')
       setStudents([])
       setRound(null)
       setCanSubmit(false)
+      setStage(null)
+      setWorkspace(null)
     } finally {
       setLoading(false)
     }
@@ -76,6 +89,13 @@ export function ReviewProvider({ children }) {
     return result
   }
 
+  function updateWorkspace(next) {
+    setWorkspace(next)
+    if (next?.activeStage) setStage(next.activeStage)
+    if (next?.round) setRound(next.round)
+    if (typeof next?.canSubmit === 'boolean') setCanSubmit(next.canSubmit)
+  }
+
   return (
     <ReviewContext.Provider
       value={{
@@ -86,6 +106,9 @@ export function ReviewProvider({ children }) {
         reloadStudents: loadStudents,
         round,
         canSubmit,
+        stage,
+        workspace,
+        updateWorkspace,
       }}
     >
       {children}

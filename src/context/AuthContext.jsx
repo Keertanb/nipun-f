@@ -63,9 +63,22 @@ export function AuthProvider({ children }) {
     }
   }
 
-  function loginAsAdmin(username) {
-    const u = { role: 'admin', username: username || 'admin' }
+  function loginAsAdmin(username, password) {
+    const ADMIN_ID = 'ad2400'
+    const ADMIN_PASSWORD = 'Admin@2026'
+    const id = String(username || '').trim()
+    const pass = String(password || '')
+
+    if (id !== ADMIN_ID || pass !== ADMIN_PASSWORD) {
+      const err = new Error('Invalid admin ID or password')
+      setError(err.message)
+      throw err
+    }
+
+    const u = { role: 'admin', username: ADMIN_ID }
     persistUser(u)
+    setError(null)
+    return u
   }
 
   async function logout() {
