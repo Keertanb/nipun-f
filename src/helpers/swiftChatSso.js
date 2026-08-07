@@ -1,29 +1,29 @@
-const SSO_KEY = 'ng_sso'
+const SSO_KEY = "ng_sso";
 
 export function getSsoDetails() {
   try {
-    return JSON.parse(localStorage.getItem(SSO_KEY) || '{}')
+    return JSON.parse(localStorage.getItem(SSO_KEY) || "{}");
   } catch {
-    return {}
+    return {};
   }
 }
 
 export function setSsoDetails(ssoDetails) {
-  localStorage.setItem(SSO_KEY, JSON.stringify(ssoDetails || {}))
-  return ssoDetails || {}
+  localStorage.setItem(SSO_KEY, JSON.stringify(ssoDetails || {}));
+  return ssoDetails || {};
 }
 
 export function clearSsoDetails() {
-  localStorage.removeItem(SSO_KEY)
+  localStorage.removeItem(SSO_KEY);
 }
 
 export function isSsoExpired(ssoDetails = getSsoDetails()) {
-  if (!ssoDetails?.expires_at) return true
-  return Date.now() >= Number(ssoDetails.expires_at) * 1000
+  if (!ssoDetails?.expires_at) return true;
+  return Date.now() >= Number(ssoDetails.expires_at) * 1000;
 }
 
 function isValidSso(sso) {
-  return Boolean(sso?.grant_token && sso?.expires_at)
+  return Boolean(sso?.grant_token && sso?.expires_at);
 }
 
 /**
@@ -31,39 +31,41 @@ function isValidSso(sso) {
  */
 export function getUserConsent() {
   return new Promise((resolve, reject) => {
-    const mini = typeof window !== 'undefined' ? window.MiniAppExtension : null
+    const mini = typeof window !== "undefined" ? window.MiniAppExtension : null;
     if (!mini?.getUserConsent) {
-      reject(new Error('SwiftChat MiniApp SDK is not available'))
-      return
+      reject(new Error("SwiftChat MiniApp SDK is not available"));
+      return;
     }
     try {
       mini.getUserConsent((data) => {
         if (data?.success && data.payload && isValidSso(data.payload)) {
-          setSsoDetails(data.payload)
-          resolve(data.payload)
+          setSsoDetails(data.payload);
+          resolve(data.payload);
         } else {
-          reject(new Error('SwiftChat SSO consent was denied or incomplete'))
+          reject(new Error("SwiftChat SSO consent was denied or incomplete"));
         }
-      })
+      });
     } catch (err) {
-      reject(err instanceof Error ? err : new Error('SwiftChat SSO consent failed'))
+      reject(
+        err instanceof Error ? err : new Error("SwiftChat SSO consent failed"),
+      );
     }
-  })
+  });
 }
 
 /**
  * Survey-style SSO for login — only SDK-generated ssoDetails (no static mocks).
  */
 export async function ensureSsoDetailsForLogin() {
-  let ssoDetails = getSsoDetails()
+  let ssoDetails = getSsoDetails();
 
   if (!isSsoExpired(ssoDetails) && isValidSso(ssoDetails)) {
-    return ssoDetails
+    return ssoDetails;
   }
 
-  ssoDetails = await getUserConsent()
+  ssoDetails = await getUserConsent();
   if (!isValidSso(ssoDetails)) {
-    throw new Error('SwiftChat SSO consent is required to sign in')
+    throw new Error("SwiftChat SSO consent is required");
   }
-  return setSsoDetails(ssoDetails)
+  return setSsoDetails(ssoDetails);
 }
