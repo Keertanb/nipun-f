@@ -50,18 +50,21 @@ export function AuthProvider({ children }) {
   }, [])
 
   /**
-   * Same SSO flow as survey frontend onSubmit:
-   * - SDK on + expired → MiniAppExtension.getUserConsent → send payload
-   * - SDK on + valid → reuse stored ssoDetails
-   * - SDK off → send empty ssoDetails
+   * Survey-style SSO:
+   * - If SDK/mocks available → getUserConsent when expired, then send ssoDetails
+   * - Always send grant_token so backend can resolve user_id (mobile) and persist it
    */
   async function loginAsTeacher({ teacherCode }) {
     setLoading(true)
     setError(null)
     try {
+      const hasMiniApp =
+        typeof window !== 'undefined' && Boolean(window.MiniAppExtension?.getUserConsent)
+
       let ssoDetails = {}
 
-      if (env.swiftChatSDKEnabled) {
+      // Real SwiftChat webview OR local mocks both expose MiniAppExtension
+      if (env.swiftChatSDKEnabled || hasMiniApp) {
         ssoDetails = getSsoDetails()
         if (!ssoDetails.expires_at || Date.now() >= Number(ssoDetails.expires_at) * 1000) {
           const payload = await getUserConsent()
@@ -70,8 +73,9 @@ export function AuthProvider({ children }) {
           }
           ssoDetails = setSsoDetails(payload)
         }
-      } else {
-        ssoDetails = {}
+        if (!ssoDetails?.grant_token) {
+          throw new Error('SwiftChat SSO grant_token is required to sign in')
+        }
       }
 
       const { teacher, school } = await loginTeacher({
