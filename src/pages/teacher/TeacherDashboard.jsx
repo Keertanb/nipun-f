@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Users, CheckCircle2, Clock, School, MapPin } from 'lucide-react'
 import StatCard from '../../components/ui/StatCard'
@@ -18,9 +18,18 @@ import { useReviews } from '../../context/ReviewContext'
 import { useLanguage } from '../../context/LanguageContext'
 import TeacherStagePanel from '../../components/teacher/TeacherStagePanel'
 
+const kidsWatermarkStyle = {
+  backgroundImage: "url('/images/kids-watermark.png')",
+  backgroundSize: 'contain',
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'center',
+  maskImage: 'radial-gradient(ellipse 62% 62% at 50% 42%, black 45%, transparent 82%)',
+  WebkitMaskImage: 'radial-gradient(ellipse 62% 62% at 50% 42%, black 45%, transparent 82%)',
+}
+
 export default function TeacherDashboard() {
   const { user } = useAuth()
-  const { students, loading, error, reloadStudents, updateWorkspace } = useReviews()
+  const { students, loading, error, reloadStudents } = useReviews()
   const { t } = useLanguage()
   const teacher = user?.teacher
 
@@ -38,10 +47,21 @@ export default function TeacherDashboard() {
     }
   }, [myStudents])
 
+  const handleRetry = useCallback(() => {
+    reloadStudents({ withWorkspace: true })
+  }, [reloadStudents])
+
   if (!teacher) return null
 
   return (
     <div className="relative">
+      {/* Kids watermark in the left margin behind class cards */}
+      <div
+        className="hidden xl:block fixed -left-12 top-[72%] -translate-y-1/2 w-72 h-72 2xl:w-96 2xl:h-96 opacity-50 pointer-events-none z-0"
+        style={kidsWatermarkStyle}
+        aria-hidden="true"
+      />
+
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none" aria-hidden="true">
         <ConfettiDots />
         <StarDoodle className="w-6 h-6 top-2 right-[18%] hidden md:block" color="#FFBE22" delay={0.3} />
@@ -61,7 +81,7 @@ export default function TeacherDashboard() {
         <SolidShape shape="circle" className="w-6 h-6 top-[56rem] right-[20%] hidden xl:block opacity-70" color="#FFBE22" />
       </div>
 
-      <div className="relative space-y-8">
+      <div className="relative z-[1] space-y-8">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -117,48 +137,28 @@ export default function TeacherDashboard() {
           />
         </div>
 
-        <TeacherStagePanel
-          onWorkspaceChange={(ws) => {
-            updateWorkspace?.(ws)
-            if (ws?.activeStage) reloadStudents()
-          }}
-        />
+        <TeacherStagePanel />
 
-        <div className="relative">
-          <div
-            className="hidden xl:block fixed -left-12 top-3/4 -translate-y-1/2 w-72 h-72 2xl:w-96 2xl:h-96 opacity-50 pointer-events-none"
-            style={{
-              backgroundImage: "url('/images/kids-watermark.png')",
-              backgroundSize: 'contain',
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'center',
-              maskImage: 'radial-gradient(ellipse 62% 62% at 50% 42%, black 45%, transparent 82%)',
-              WebkitMaskImage: 'radial-gradient(ellipse 62% 62% at 50% 42%, black 45%, transparent 82%)',
-            }}
-            aria-hidden="true"
-          />
-
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3 gap-3">
-              <h2 className="font-heading font-bold text-lg text-sky-900">{t('myStudents')}</h2>
-              {error ? (
-                <button type="button" onClick={reloadStudents} className="text-sm font-semibold text-sky-600 hover:underline">
-                  {t('retry')}
-                </button>
-              ) : null}
-            </div>
-            {loading ? (
-              <p className="text-sky-800/60 text-sm py-10 text-center">{t('loadingStudents')}</p>
-            ) : error ? (
-              <p className="text-red-600 text-sm py-10 text-center">{error}</p>
-            ) : (
-              <StudentListing
-                students={myStudents}
-                basePath="/teacher/students"
-                classesAssigned={teacher.classesAssigned || []}
-              />
-            )}
+        <div>
+          <div className="flex items-center justify-between mb-3 gap-3">
+            <h2 className="font-heading font-bold text-lg text-sky-900">{t('myStudents')}</h2>
+            {error ? (
+              <button type="button" onClick={handleRetry} className="text-sm font-semibold text-sky-600 hover:underline">
+                {t('retry')}
+              </button>
+            ) : null}
           </div>
+          {loading ? (
+            <p className="text-sky-800/60 text-sm py-10 text-center">{t('loadingStudents')}</p>
+          ) : error ? (
+            <p className="text-red-600 text-sm py-10 text-center">{error}</p>
+          ) : (
+            <StudentListing
+              students={myStudents}
+              basePath="/teacher/students"
+              classesAssigned={teacher.classesAssigned || []}
+            />
+          )}
         </div>
       </div>
     </div>

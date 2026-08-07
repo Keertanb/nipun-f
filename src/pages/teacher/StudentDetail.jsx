@@ -16,7 +16,7 @@ import Badge from '../../components/ui/Badge'
 import { useReviews } from '../../context/ReviewContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { REVIEW_LEVELS } from '../../i18n/translations'
-import { fetchTeacherStageWorkspace, saveTeacherIntervention } from '../../api/stages'
+import { saveTeacherIntervention } from '../../api/stages'
 import { Star as StarDoodle, Balloon, ABCBlock, SquiggleUnderline, Kid, SolidShape, Crayon } from '../../components/illustrations/Doodles'
 
 const SUBJECTS = [
@@ -41,8 +41,18 @@ export default function StudentDetail() {
   const { studentId } = useParams()
   const navigate = useNavigate()
   const { t, lang } = useLanguage()
-  const { students, submitReview, loading, error, reloadStudents, canSubmit, round, stage, workspace, updateWorkspace } =
-    useReviews()
+  const {
+    students,
+    submitReview,
+    loading,
+    error,
+    reloadStudents,
+    canSubmit,
+    round,
+    stage,
+    workspace,
+    refreshWorkspace,
+  } = useReviews()
   const student = useMemo(() => students.find((s) => s.id === studentId), [students, studentId])
 
   const [bySubject, setBySubject] = useState({
@@ -171,8 +181,7 @@ export default function StudentDetail() {
         actions: draft.actions,
         notes: draft.notes || '',
       })
-      const nextWs = await fetchTeacherStageWorkspace()
-      updateWorkspace?.(nextWs)
+      await refreshWorkspace()
     } catch (err) {
       setSaveError(err.message || t('reviewFailed'))
     } finally {

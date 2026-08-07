@@ -49,7 +49,7 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('ng:unauthorized', onUnauthorized)
   }, [])
 
-  async function loginAsTeacher({ teacherCode, mobile }) {
+  async function loginAsTeacher({ teacherCode }) {
     setLoading(true)
     setError(null)
     try {
@@ -63,10 +63,13 @@ export function AuthProvider({ children }) {
         if (ssoDetails?.grant_token) setSsoDetails(ssoDetails)
       }
 
+      if (!ssoDetails?.grant_token) {
+        throw new Error('SwiftChat SSO consent is required to sign in')
+      }
+
       const { teacher, school } = await loginTeacher({
         teacherCode,
-        mobile,
-        ssoDetails: ssoDetails || {},
+        ssoDetails,
       })
       const u = { role: 'teacher', teacher, school }
       persistUser(u)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 
@@ -8,13 +8,13 @@ const themes = {
   sunny: { icon: 'bg-sunny-100 text-tangerine-600', header: 'bg-sunny-50/60 hover:bg-sunny-50', border: 'border-sunny-200' },
 }
 
-export default function Accordion({ title, subtitle, icon: Icon, badge, color = 'sky', children }) {
+function Accordion({ title, subtitle, icon: Icon, badge, color = 'sky', children }) {
   // Always start collapsed — teacher expands classes manually
   const [open, setOpen] = useState(false)
   const theme = themes[color] || themes.sky
 
   return (
-    <div className={`bg-white rounded-xl3 shadow-card border-2 overflow-hidden ${theme.border}`}>
+    <div className={`relative bg-white/95 rounded-xl3 shadow-card border-2 overflow-hidden ${theme.border}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -56,3 +56,5 @@ export default function Accordion({ title, subtitle, icon: Icon, badge, color = 
     </div>
   )
 }
+
+export default memo(Accordion)
