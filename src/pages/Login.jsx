@@ -56,6 +56,7 @@ export default function Login() {
   const [role, setRole] = useState("teacher");
   const [showPass, setShowPass] = useState(false);
   const [teacherId, setTeacherId] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [formError, setFormError] = useState("");
@@ -70,13 +71,20 @@ export default function Login() {
 
     if (role === "teacher") {
       const code = teacherId.trim();
+      const mobileDigits = mobile.replace(/\D/g, "").slice(-10);
+
       if (!code) {
         setFormError(t("teacherIdPlaceholder"));
         return;
       }
+      if (!/^[6-9]\d{9}$/.test(mobileDigits)) {
+        setFormError(t("mobilePlaceholder"));
+        return;
+      }
+
       setSubmitting(true);
       try {
-        await loginAsTeacher(code);
+        await loginAsTeacher({ teacherCode: code, mobile: mobileDigits });
         navigate("/teacher", { replace: true });
       } catch (err) {
         setFormError(err.message || "Login failed. Please try again.");
@@ -271,7 +279,10 @@ export default function Login() {
               <button
                 key={r.key}
                 type="button"
-                onClick={() => setRole(r.key)}
+                onClick={() => {
+                  setRole(r.key);
+                  setFormError("");
+                }}
                 className={`relative flex-1 py-2.5 rounded-full text-sm font-heading font-bold transition-colors ${
                   role === r.key
                     ? "text-white"
@@ -303,22 +314,44 @@ export default function Login() {
               className="space-y-4"
             >
               {role === "teacher" ? (
-                <div>
-                  <label className="text-xs font-semibold text-sky-800/70 mb-1 block">
-                    {t("teacherId")}
-                  </label>
-                  <input
-                    value={teacherId}
-                    onChange={(e) => setTeacherId(e.target.value.slice(0, 50))}
-                    placeholder={t("teacherIdPlaceholder")}
-                    className="w-full rounded-2xl border-2 border-sky-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                    autoComplete="username"
-                    required
-                  />
-                  <p className="text-[11px] text-sky-700/50 mt-1.5">
-                    {t("teacherIdHint")}
-                  </p>
-                </div>
+                <>
+                  <div>
+                    <label className="text-xs font-semibold text-sky-800/70 mb-1 block">
+                      {t("teacherId")}
+                    </label>
+                    <input
+                      value={teacherId}
+                      onChange={(e) => setTeacherId(e.target.value.slice(0, 50))}
+                      placeholder={t("teacherIdPlaceholder")}
+                      className="w-full rounded-2xl border-2 border-sky-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+                      autoComplete="username"
+                      required
+                    />
+                    <p className="text-[11px] text-sky-700/50 mt-1.5">
+                      {t("teacherIdHint")}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-sky-800/70 mb-1 block">
+                      {t("mobileNumber")}
+                    </label>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      value={mobile}
+                      onChange={(e) =>
+                        setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
+                      }
+                      placeholder={t("mobilePlaceholder")}
+                      className="w-full rounded-2xl border-2 border-sky-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+                      autoComplete="tel"
+                      required
+                    />
+                    <p className="text-[11px] text-sky-700/50 mt-1.5">
+                      {t("mobileHint")}
+                    </p>
+                  </div>
+                </>
               ) : (
                 <>
                   <div>

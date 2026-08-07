@@ -71,11 +71,15 @@ export function mapRegistryStudent(student, meta = {}) {
   }
 }
 
-export async function loginTeacher(teacherId) {
+export async function loginTeacher({ teacherCode, mobile, ssoDetails = {} }) {
   const res = await apiRequest('/auth/login', {
     method: 'POST',
     auth: false,
-    body: { userName: String(teacherId).trim() },
+    body: {
+      teacherCode: String(teacherCode).trim(),
+      mobile: String(mobile).trim(),
+      ssoDetails,
+    },
   })
 
   const data = res.data

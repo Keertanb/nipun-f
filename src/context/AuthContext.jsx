@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { loginTeacher, logoutTeacher, fetchTeacherProfile } from '../api/teacher'
 import { getSession, clearSession } from '../api/client'
+import env from '../helpers/env'
+import { getSsoDetails, getUserConsent, isSsoExpired, setSsoDetails } from '../helpers/swiftChatSso'
 
 const AuthContext = createContext(null)
 
@@ -47,11 +49,25 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('ng:unauthorized', onUnauthorized)
   }, [])
 
-  async function loginAsTeacher(teacherId) {
+  async function loginAsTeacher({ teacherCode, mobile }) {
     setLoading(true)
     setError(null)
     try {
-      const { teacher, school } = await loginTeacher(teacherId)
+      let ssoDetails = getSsoDetails()
+      if (env.swiftChatSDKEnabled) {
+        if (isSsoExpired(ssoDetails)) {
+          ssoDetails = await getUserConsent()
+        }
+      } else if (!ssoDetails?.grant_token) {
+        ssoDetails = await getUserConsent()
+        if (ssoDetails?.grant_token) setSsoDetails(ssoDetails)
+      }
+
+      const { teacher, school } = await loginTeacher({
+        teacherCode,
+        mobile,
+        ssoDetails: ssoDetails || {},
+      })
       const u = { role: 'teacher', teacher, school }
       persistUser(u)
       return u
