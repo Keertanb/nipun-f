@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 import { loginTeacher, logoutTeacher, fetchTeacherProfile } from '../api/teacher'
 import { getSession, clearSession } from '../api/client'
 import env from '../helpers/env'
-import { getSsoDetails, getUserConsent, isSsoExpired, setSsoDetails } from '../helpers/swiftChatSso'
+import { getSsoDetails, getUserConsent, setSsoDetails } from '../helpers/swiftChatSso'
 
 const AuthContext = createContext(null)
 
@@ -49,22 +49,29 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('ng:unauthorized', onUnauthorized)
   }, [])
 
+  /**
+   * Same SSO flow as survey frontend onSubmit:
+   * - SDK on + expired → MiniAppExtension.getUserConsent → send payload
+   * - SDK on + valid → reuse stored ssoDetails
+   * - SDK off → send empty ssoDetails
+   */
   async function loginAsTeacher({ teacherCode }) {
     setLoading(true)
     setError(null)
     try {
-      let ssoDetails = getSsoDetails()
-      if (env.swiftChatSDKEnabled) {
-        if (isSsoExpired(ssoDetails)) {
-          ssoDetails = await getUserConsent()
-        }
-      } else if (!ssoDetails?.grant_token) {
-        ssoDetails = await getUserConsent()
-        if (ssoDetails?.grant_token) setSsoDetails(ssoDetails)
-      }
+      let ssoDetails = {}
 
-      if (!ssoDetails?.grant_token) {
-        throw new Error('SwiftChat SSO consent is required to sign in')
+      if (env.swiftChatSDKEnabled) {
+        ssoDetails = getSsoDetails()
+        if (!ssoDetails.expires_at || Date.now() >= Number(ssoDetails.expires_at) * 1000) {
+          const payload = await getUserConsent()
+          if (!payload?.grant_token) {
+            throw new Error('SwiftChat SSO consent is required to sign in')
+          }
+          ssoDetails = setSsoDetails(payload)
+        }
+      } else {
+        ssoDetails = {}
       }
 
       const { teacher, school } = await loginTeacher({
