@@ -32,6 +32,7 @@ function isValidSso(sso) {
 export function getUserConsent() {
   return new Promise((resolve, reject) => {
     const mini = typeof window !== "undefined" ? window.MiniAppExtension : null;
+    console.log(mini, "mini");
     if (!mini?.getUserConsent) {
       reject(new Error("SwiftChat MiniApp SDK is not available"));
       return;
