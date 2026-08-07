@@ -1,12 +1,4 @@
-import env from './env'
-
 const SSO_KEY = 'ng_sso'
-
-/** Stable mock grant token for local/non-webview login (valid UUID). */
-export const LOCAL_MOCK_SSO = {
-  grant_token: '00000000-0000-4000-8000-000000000001',
-  expires_at: Math.floor(Date.now() / 1000) + 3600,
-}
 
 export function getSsoDetails() {
   try {
@@ -35,13 +27,13 @@ function isValidSso(sso) {
 }
 
 /**
- * Request SwiftChat MiniApp user consent (grant_token + expires_at).
+ * Request SwiftChat MiniApp user consent (grant_token + expires_at from SDK only).
  */
 export function getUserConsent() {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const mini = typeof window !== 'undefined' ? window.MiniAppExtension : null
     if (!mini?.getUserConsent) {
-      resolve({})
+      reject(new Error('SwiftChat MiniApp SDK is not available'))
       return
     }
     try {
@@ -50,46 +42,28 @@ export function getUserConsent() {
           setSsoDetails(data.payload)
           resolve(data.payload)
         } else {
-          resolve({})
+          reject(new Error('SwiftChat SSO consent was denied or incomplete'))
         }
       })
-    } catch {
-      resolve({})
+    } catch (err) {
+      reject(err instanceof Error ? err : new Error('SwiftChat SSO consent failed'))
     }
   })
 }
 
 /**
- * Survey-style SSO for login:
- * - SDK enabled → refresh consent if expired, require real payload
- * - SDK disabled / local → use MiniApp mock or local fallback so backend always gets grant_token
+ * Survey-style SSO for login — only SDK-generated ssoDetails (no static mocks).
  */
 export async function ensureSsoDetailsForLogin() {
   let ssoDetails = getSsoDetails()
 
-  if (env.swiftChatSDKEnabled) {
-    if (isSsoExpired(ssoDetails) || !isValidSso(ssoDetails)) {
-      ssoDetails = await getUserConsent()
-    }
-    if (!isValidSso(ssoDetails)) {
-      throw new Error('SwiftChat SSO consent is required to sign in')
-    }
-    return setSsoDetails(ssoDetails)
-  }
-
-  // Local / non-SwiftChat: still send grant_token so backend can resolve mobile
   if (!isSsoExpired(ssoDetails) && isValidSso(ssoDetails)) {
     return ssoDetails
   }
 
-  const fromSdk = await getUserConsent()
-  if (isValidSso(fromSdk)) {
-    return setSsoDetails(fromSdk)
+  ssoDetails = await getUserConsent()
+  if (!isValidSso(ssoDetails)) {
+    throw new Error('SwiftChat SSO consent is required to sign in')
   }
-
-  const fallback = {
-    grant_token: LOCAL_MOCK_SSO.grant_token,
-    expires_at: Math.floor(Date.now() / 1000) + 3600,
-  }
-  return setSsoDetails(fallback)
+  return setSsoDetails(ssoDetails)
 }
