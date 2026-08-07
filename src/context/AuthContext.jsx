@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { loginTeacher, logoutTeacher, fetchTeacherProfile } from '../api/teacher'
 import { getSession, clearSession } from '../api/client'
-import env from '../helpers/env'
-import { getSsoDetails, getUserConsent, setSsoDetails } from '../helpers/swiftChatSso'
+import { ensureSsoDetailsForLogin } from '../helpers/swiftChatSso'
 
 const AuthContext = createContext(null)
 
@@ -50,33 +49,14 @@ export function AuthProvider({ children }) {
   }, [])
 
   /**
-   * Survey-style SSO:
-   * - If SDK/mocks available → getUserConsent when expired, then send ssoDetails
-   * - Always send grant_token so backend can resolve user_id (mobile) and persist it
+   * Always send ssoDetails with grant_token + expires_at (survey shape).
+   * Never posts empty ssoDetails {}.
    */
   async function loginAsTeacher({ teacherCode }) {
     setLoading(true)
     setError(null)
     try {
-      const hasMiniApp =
-        typeof window !== 'undefined' && Boolean(window.MiniAppExtension?.getUserConsent)
-
-      let ssoDetails = {}
-
-      // Real SwiftChat webview OR local mocks both expose MiniAppExtension
-      if (env.swiftChatSDKEnabled || hasMiniApp) {
-        ssoDetails = getSsoDetails()
-        if (!ssoDetails.expires_at || Date.now() >= Number(ssoDetails.expires_at) * 1000) {
-          const payload = await getUserConsent()
-          if (!payload?.grant_token) {
-            throw new Error('SwiftChat SSO consent is required to sign in')
-          }
-          ssoDetails = setSsoDetails(payload)
-        }
-        if (!ssoDetails?.grant_token) {
-          throw new Error('SwiftChat SSO grant_token is required to sign in')
-        }
-      }
+      const ssoDetails = await ensureSsoDetailsForLogin()
 
       const { teacher, school } = await loginTeacher({
         teacherCode,

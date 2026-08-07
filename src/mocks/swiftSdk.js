@@ -12,9 +12,12 @@ export function installSwiftSdkMocks() {
     }
   }
 
-  if (!window.MiniAppExtension) {
-    window.MiniAppExtension = {
-      getUserConsent: (cb) => {
+  // Always ensure getUserConsent exists for local login SSO payload
+  window.MiniAppExtension = {
+    ...(window.MiniAppExtension || {}),
+    getUserConsent:
+      window.MiniAppExtension?.getUserConsent ||
+      ((cb) => {
         cb?.({
           success: true,
           payload: {
@@ -22,12 +25,11 @@ export function installSwiftSdkMocks() {
             expires_at: Math.floor(Date.now() / 1000) + 3600,
           },
         })
-      },
-      checkPermission: (_perm, cb) => cb?.({ success: true, granted: true }),
-      getPermission: (_perm, cb) => cb?.({ success: true, granted: true }),
-    }
+      }),
+    checkPermission: window.MiniAppExtension?.checkPermission || ((_perm, cb) => cb?.({ success: true, granted: true })),
+    getPermission: window.MiniAppExtension?.getPermission || ((_perm, cb) => cb?.({ success: true, granted: true })),
   }
 
   // eslint-disable-next-line no-console
-  console.info('[mocks] SwiftChat SDK stubs installed (VITE_USE_MOCKS)')
+  console.info('[mocks] SwiftChat SDK stubs installed')
 }
